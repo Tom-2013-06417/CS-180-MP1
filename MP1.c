@@ -9,7 +9,7 @@
 #define DNE 48
 #define STR 71
 #define GOL 65
-#define SLP 20
+#define SLP 2
 #define INF -1
 
 #define NTH 25
@@ -241,6 +241,9 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	initQueue(&Neighbors);
 
 
+	if (array[start[1]][start[0]] == OBS) return;
+
+
 	array[start[1]][start[0]] = STR;													//Mark the start coordinate
 	array[end[1]][end[0]] = GOL;														//Mark the end coordinate
 	camefrom[end[1]][end[0]] = GOL;														//For viewing purposes, mark the end point in the vector field
@@ -259,23 +262,21 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	
 	while (!isEmptyQueue(&Q)){															//While the queue is not empty
 
-		traverse(&Q);		
 		dequeued = dequeue(&Q);															//Dequeue what's on the queue.	
-
 		
 		//Expand the neighbors by selecting the closest one. Queue Neighbors first into Neighbor Queue (becomes sorted). Dequeue them to the main Queue one by one so that their neigbhors will be enqueued in the future:
 
 		if (dequeued[1] == 0){															//Boundary Checkers for accessing elements outside the 2D array
 			distNorth = INF;															//If node is located within the top wall
-			if (dequeued[0] == 0){
+			if (dequeued[0] == 0 || array[dequeued[1]][dequeued[0]-1] == OBS){
 				distWest = INF;
 				distEast = distanceArray[dequeued[1]][dequeued[0]+1];
 			}
-			else if (dequeued[0] == COL-1){
+			else if (dequeued[0] == COL-1 || array[dequeued[1]][dequeued[0]+1] == OBS){
 				distEast = INF;
 				distWest = distanceArray[dequeued[1]][dequeued[0]-1];
 			}
-			else {
+			else {																		//NOTE !!!!!!!!! NOTE !!!!!! TAKE NOTE OF THREE WALLED BOUNDARIES!!!!! SHOULD WE STILL CODE THEM IN THIS THIRD CONDITION? IF THE NEED ARISES.
 				distWest = distanceArray[dequeued[1]][dequeued[0]-1];
 				distEast = distanceArray[dequeued[1]][dequeued[0]+1];
 			}
@@ -284,11 +285,11 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 
 		else if (dequeued[1] == ROW-1){													//If node is located within the bottom wall
 			distSouth = INF;
-			if (dequeued[0] == 0){
+			if (dequeued[0] == 0 || array[dequeued[1]][dequeued[0]-1] == OBS){
 				distWest = INF;
 				distEast = distanceArray[dequeued[1]][dequeued[0]+1];
 			}
-			else if (dequeued[0] == COL-1){
+			else if (dequeued[0] == COL-1 || array[dequeued[1]][dequeued[0]+1] == OBS){
 				distEast = INF;
 				distWest = distanceArray[dequeued[1]][dequeued[0]-1];
 			}
@@ -301,11 +302,11 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 
 		else if (dequeued[0] == 0){														//If node is located within the left wall
 			distWest = INF;
-			if (dequeued[1] == 0){
+			if (dequeued[1] == 0 || array[dequeued[1]-1][dequeued[0]] == OBS){
 				distNorth = INF;
 				distSouth = distanceArray[dequeued[1]+1][dequeued[0]];
 			}
-			else if (dequeued[1] == ROW-1){
+			else if (dequeued[1] == ROW-1 || array[dequeued[1]+1][dequeued[0]] == OBS){
 				distSouth = INF;
 				distNorth = distanceArray[dequeued[1]-1][dequeued[0]];
 			}
@@ -318,11 +319,11 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 
 		else if (dequeued[0] == COL-1){													//If node is located within the right wall
 			distEast = INF;
-			if (dequeued[1] == 0){
+			if (dequeued[1] == 0 || array[dequeued[1]-1][dequeued[0]] == OBS){
 				distNorth = INF;
 				distSouth = distanceArray[dequeued[1]+1][dequeued[0]];
 			}
-			else if (dequeued[1] == ROW-1){
+			else if (dequeued[1] == ROW-1 || array[dequeued[1]+1][dequeued[0]] == OBS){
 				distSouth = INF;
 				distNorth = distanceArray[dequeued[1]-1][dequeued[0]];
 			}
@@ -334,10 +335,10 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		}
 
 		else {																			//If node is in between all four walls
-			distNorth = distanceArray[dequeued[1]-1][dequeued[0]];
-			distWest = distanceArray[dequeued[1]][dequeued[0]-1];
-			distSouth = distanceArray[dequeued[1]+1][dequeued[0]];
-			distEast = distanceArray[dequeued[1]][dequeued[0]+1];
+			(array[dequeued[1]-1][dequeued[0]] == OBS) ? (distNorth = INF) : (distNorth = distanceArray[dequeued[1]-1][dequeued[0]]); 							//If there is a blockage in the north,								
+			(array[dequeued[1]][dequeued[0]-1] == OBS) ? (distWest = INF) : (distWest = distanceArray[dequeued[1]][dequeued[0]-1]);
+			(array[dequeued[1]+1][dequeued[0]] == OBS) ? (distSouth = INF) : (distSouth = distanceArray[dequeued[1]+1][dequeued[0]]);
+			(array[dequeued[1]][dequeued[0]+1] == OBS) ? (distEast = INF) : (distEast = distanceArray[dequeued[1]][dequeued[0]+1]);
 		}
 
 		orderQueue = rank(distNorth, distWest, distSouth, distEast);					//Rank them. If outside bounds, do not rank (display INF).
@@ -351,10 +352,22 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 				}
 			}
 
-			if (next == 0 && visitedArray[dequeued[1]-1][dequeued[0]] == 0) 		enqueue(&Neighbors, dequeued[0], dequeued[1]-1);
-			else if (next == 1 && visitedArray[dequeued[1]][dequeued[0]-1] == 0)	enqueue(&Neighbors, dequeued[0]-1, dequeued[1]);
-			else if (next == 2 && visitedArray[dequeued[1]+1][dequeued[0]] == 0)	enqueue(&Neighbors, dequeued[0], dequeued[1]+1);
-			else if (next == 3 && visitedArray[dequeued[1]][dequeued[0]+1] == 0)	enqueue(&Neighbors, dequeued[0]+1, dequeued[1]);
+			if (next == 0 && visitedArray[dequeued[1]-1][dequeued[0]] == 0){
+				enqueue(&Neighbors, dequeued[0], dequeued[1]-1);
+				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
+			}
+			else if (next == 1 && visitedArray[dequeued[1]][dequeued[0]-1] == 0){
+				enqueue(&Neighbors, dequeued[0]-1, dequeued[1]);
+				camefrom[dequeued[1]][dequeued[0]-1] = WST;
+			}	
+			else if (next == 2 && visitedArray[dequeued[1]+1][dequeued[0]] == 0){
+				enqueue(&Neighbors, dequeued[0], dequeued[1]+1);
+				camefrom[dequeued[1]+1][dequeued[0]] = STH;
+			}	
+			else if (next == 3 && visitedArray[dequeued[1]][dequeued[0]+1] == 0){
+				enqueue(&Neighbors, dequeued[0]+1, dequeued[1]);
+				camefrom[dequeued[1]][dequeued[0]+1] = EST;
+			}	
 		}
 
 		while (!isEmptyQueue(&Neighbors)){												//Now that we have the sorted neighbors, dequeue them then visit!
@@ -369,8 +382,8 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 				if (dequeued[0] == end[0] && dequeued[1] == end[1]){					//If a newly visited node is the goal, break from the loop twice!!!
 					break;
 				}
-				//printf("\n");
-				//printGrid(camefrom);
+				printf("\n");
+				printGrid(camefrom);
 			}
 		}
 
@@ -430,7 +443,7 @@ int main(){
 	system("cls");
 
 	int grid[ROW][COL];
-	int startpt[2] = {1, 1};
+	int startpt[2] = {11, 4};
 	int endpt[2] = {24, 10};
 
 	int * temp;
@@ -458,8 +471,8 @@ int main(){
 	//quadrilateralGenerator(grid, 3, 3, 4, 11);
 	quadrilateralGenerator(grid, 13, 4, 14, 14);
 	BFS(grid, gridBFS, startpt, endpt);
-	//printf("\n");
-	//printGrid(gridBFS);
+	printf("\n");
+	printGrid(gridBFS);
 
 
 	
