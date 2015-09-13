@@ -9,8 +9,8 @@
 #define DNE 48
 #define STR 71
 #define GOL 65
-#define SLP 500
-#define INF 500
+#define SLP 50
+#define INF -1
 
 #define NTH 25
 #define WST 26
@@ -163,9 +163,9 @@ int * rank(float n, float w, float s, float e){
 		rank[i] = 0;
 	}
 
-	for (i=0; i<4; i++){
+	/*	for (i=0; i<4; i++){
 		printf("%f ", original[i]);
-	}
+	}*/
 
 	for (i=1; i<4; i++){
 		for (j=0; j<i; j++){
@@ -187,43 +187,95 @@ void gridDists(float array[][COL], int x, int y){
 	}
 }
 
+void queueTile(int array[][COL], int camefrom[][COL], Queue * Q, int x, int y, int direction){
+	if (direction == NTH){
+		if (array[y][x] == SPC && (y > -1)){
+			enqueue(Q, x, y);				
+			array[y][x] = DNE;
+			camefrom[y][x] = NTH;
+			Sleep(SLP);
+			system("cls");
+			printGrid(array);
+			printf("\n");
+			printGrid(camefrom);
+		}
+	}
+
+	else if (direction == WST){
+		if (array[y][x] == SPC && (x > -1)){
+			enqueue(Q, x, y);				
+			array[y][x] = DNE;
+			camefrom[y][x] = WST;
+			Sleep(SLP);
+			system("cls");
+			printGrid(array);
+			printf("\n");
+			printGrid(camefrom);
+		}		
+	}
+
+	else if (direction == STH){
+		if (array[y][x] == SPC && (y < ROW)){
+			enqueue(Q, x, y);				
+			array[y][x] = DNE;
+			camefrom[y][x] = STH;
+			Sleep(SLP);
+			system("cls");
+			printGrid(array);
+			printf("\n");
+			printGrid(camefrom);
+		}
+	}
+
+	else {
+		if (array[y][x] == SPC && (x < COL)){
+			enqueue(Q, x, y);				
+			array[y][x] = DNE;
+			camefrom[y][x] = EST;
+			Sleep(SLP);
+			system("cls");
+			printGrid(array);
+			printf("\n");
+			printGrid(camefrom);
+		}
+	}
+}
+
 void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	
-	int * dequeued;
+	int * dequeued;																		//Initialize all the variables
 	int * orderQueue;
-	int counter, next;
-
+	int i, j, counter, next;
 	float distNorth, distWest, distSouth, distEast;
-
 	int visitedArray[ROW][COL];
-	float distanceArray[ROW][COL];
-	
+	float distanceArray[ROW][COL];	
 	Queue Q;
 	initQueue(&Q);
 
-	array[start[1]][start[0]] = STR;	
-	array[end[1]][end[0]] = GOL;
-	camefrom[end[1]][end[0]] = GOL;
 
-	for (int i = 0; i < ROW; i++){
-		for (int j = 0; j < COL; j++){
+	array[start[1]][start[0]] = STR;													//Mark the start coordinate
+	array[end[1]][end[0]] = GOL;														//Mark the end coordinate
+	camefrom[end[1]][end[0]] = GOL;														//For viewing purposes, mark the end point in the vector field
+
+	for (i = 0; i < ROW; i++){														//Initialize the array of visitors to 0
+		for (j = 0; j < COL; j++){
 			visitedArray[i][j] = 0;
 		}
 	}
 
-	gridDists(distanceArray, start[0], start[1]);
+	gridDists(distanceArray, start[0], start[1]);										//Initialize the distances of each tile to the starting point
 
-	enqueue(&Q, start[0], start[1]);
+	enqueue(&Q, start[0], start[1]);													//Queue in the starting point
 
-	system("cls");
+	system("cls");																		//Print both the map and the vector field
 	printGrid(array);
 	printf("\n");
 	printGrid(camefrom);
 
 	
-	while (!isEmptyQueue(&Q)){
+	while (!isEmptyQueue(&Q)){															//While the queue is not empty
 		
-		dequeued = dequeue(&Q);
+		dequeued = dequeue(&Q);															//Dequeue what's on the queue.
 		visitedArray[dequeued[0]][dequeued[1]] = 1;										//Mark it as visited
 
 
@@ -235,7 +287,7 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		distEast = distanceArray[dequeued[1]][dequeued[0]+1];*/
 
 
-/*		if (dequeued[1] == 0){
+				if (dequeued[1] == 0){
 			distNorth = INF;
 			if (dequeued[0] == 0){
 				distWest = INF;
@@ -287,12 +339,12 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 			distWest = distanceArray[dequeued[1]][dequeued[0]-1];
 		}
 
-		else {*/
+		else {
 			distNorth = distanceArray[dequeued[1]-1][dequeued[0]];
 			distWest = distanceArray[dequeued[1]][dequeued[0]-1];
 			distSouth = distanceArray[dequeued[1]+1][dequeued[0]];
 			distEast = distanceArray[dequeued[1]][dequeued[0]+1];
-		//}
+		}
 
 		orderQueue = rank(distNorth, distWest, distSouth, distEast);
 
@@ -306,65 +358,28 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		}
 
 		if (next == 0) {
-			if (array[dequeued[1]-1][dequeued[0]] == SPC && (dequeued[1]-1 > -1)){			//North
-				enqueue(&Q, dequeued[0], dequeued[1]-1);				
-				array[dequeued[1]-1][dequeued[0]] = DNE;
-				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0], dequeued[1]-1, NTH);
 			if (dequeued[0] == end[0] && dequeued[1]-1 == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
 				break;
 			}
 		}
 		else if (next == 1){
-			if (array[dequeued[1]][dequeued[0]-1] == SPC && (dequeued[0]-1 > -1)){			//West
-				enqueue(&Q, dequeued[0]-1, dequeued[1]);				
-				array[dequeued[1]][dequeued[0]-1] = DNE;
-				camefrom[dequeued[1]][dequeued[0]-1] = WST;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0]-1, dequeued[1], WST);
 			if (dequeued[0]-1 == end[0] && dequeued[1] == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = WST;
 				break;
 			}	
 		}
 		else if (next == 2){
-			if (array[dequeued[1]+1][dequeued[0]] == SPC && (dequeued[1]+1 < ROW)){			//South	
-				enqueue(&Q, dequeued[0], dequeued[1]+1);				
-				array[dequeued[1]+1][dequeued[0]] = DNE;
-				camefrom[dequeued[1]+1][dequeued[0]] = STH;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0], dequeued[1]+1, STH);
 			if (dequeued[0] == end[0] && dequeued[1]+1 == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = STH;
 				break;
 			}
 		}		
 		else {
-			
-			if (array[dequeued[1]][dequeued[0]+1] == SPC && (dequeued[0]+1 < COL)){			//East
-				enqueue(&Q, dequeued[0]+1, dequeued[1]);				
-				array[dequeued[1]][dequeued[0]+1] = DNE;
-				camefrom[dequeued[1]][dequeued[0]+1] = EST;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0]+1, dequeued[1], EST);
 			if (dequeued[0]+1 == end[0] && dequeued[1] == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = EST;
 				break;
@@ -380,65 +395,28 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		}
 
 		if (next == 0) {
-			if (array[dequeued[1]-1][dequeued[0]] == SPC && (dequeued[1]-1 > -1)){			//North
-				enqueue(&Q, dequeued[0], dequeued[1]-1);				
-				array[dequeued[1]-1][dequeued[0]] = DNE;
-				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0], dequeued[1]-1, NTH);
 			if (dequeued[0] == end[0] && dequeued[1]-1 == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
 				break;
 			}
 		}
 		else if (next == 1){
-			if (array[dequeued[1]][dequeued[0]-1] == SPC && (dequeued[0]-1 > -1)){			//West
-				enqueue(&Q, dequeued[0]-1, dequeued[1]);				
-				array[dequeued[1]][dequeued[0]-1] = DNE;
-				camefrom[dequeued[1]][dequeued[0]-1] = WST;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0]-1, dequeued[1], WST);
 			if (dequeued[0]-1 == end[0] && dequeued[1] == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = WST;
 				break;
 			}	
 		}
 		else if (next == 2){
-			if (array[dequeued[1]+1][dequeued[0]] == SPC && (dequeued[1]+1 < ROW)){			//South	
-				enqueue(&Q, dequeued[0], dequeued[1]+1);				
-				array[dequeued[1]+1][dequeued[0]] = DNE;
-				camefrom[dequeued[1]+1][dequeued[0]] = STH;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0], dequeued[1]+1, STH);
 			if (dequeued[0] == end[0] && dequeued[1]+1 == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = STH;
 				break;
 			}
 		}		
 		else {
-			
-			if (array[dequeued[1]][dequeued[0]+1] == SPC && (dequeued[0]+1 < COL)){			//East
-				enqueue(&Q, dequeued[0]+1, dequeued[1]);				
-				array[dequeued[1]][dequeued[0]+1] = DNE;
-				camefrom[dequeued[1]][dequeued[0]+1] = EST;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0]+1, dequeued[1], EST);
 			if (dequeued[0]+1 == end[0] && dequeued[1] == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = EST;
 				break;
@@ -455,65 +433,28 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		}
 
 		if (next == 0) {
-			if (array[dequeued[1]-1][dequeued[0]] == SPC && (dequeued[1]-1 > -1)){			//North
-				enqueue(&Q, dequeued[0], dequeued[1]-1);				
-				array[dequeued[1]-1][dequeued[0]] = DNE;
-				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0], dequeued[1]-1, NTH);
 			if (dequeued[0] == end[0] && dequeued[1]-1 == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
 				break;
 			}
 		}
 		else if (next == 1){
-			if (array[dequeued[1]][dequeued[0]-1] == SPC && (dequeued[0]-1 > -1)){			//West
-				enqueue(&Q, dequeued[0]-1, dequeued[1]);				
-				array[dequeued[1]][dequeued[0]-1] = DNE;
-				camefrom[dequeued[1]][dequeued[0]-1] = WST;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0]-1, dequeued[1], WST);
 			if (dequeued[0]-1 == end[0] && dequeued[1] == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = WST;
 				break;
 			}	
 		}
 		else if (next == 2){
-			if (array[dequeued[1]+1][dequeued[0]] == SPC && (dequeued[1]+1 < ROW)){			//South	
-				enqueue(&Q, dequeued[0], dequeued[1]+1);				
-				array[dequeued[1]+1][dequeued[0]] = DNE;
-				camefrom[dequeued[1]+1][dequeued[0]] = STH;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0], dequeued[1]+1, STH);
 			if (dequeued[0] == end[0] && dequeued[1]+1 == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = STH;
 				break;
 			}
 		}		
 		else {
-			
-			if (array[dequeued[1]][dequeued[0]+1] == SPC && (dequeued[0]+1 < COL)){			//East
-				enqueue(&Q, dequeued[0]+1, dequeued[1]);				
-				array[dequeued[1]][dequeued[0]+1] = DNE;
-				camefrom[dequeued[1]][dequeued[0]+1] = EST;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0]+1, dequeued[1], EST);
 			if (dequeued[0]+1 == end[0] && dequeued[1] == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = EST;
 				break;
@@ -530,65 +471,28 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		}
 
 		if (next == 0) {
-			if (array[dequeued[1]-1][dequeued[0]] == SPC && (dequeued[1]-1 > -1)){			//North
-				enqueue(&Q, dequeued[0], dequeued[1]-1);				
-				array[dequeued[1]-1][dequeued[0]] = DNE;
-				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0], dequeued[1]-1, NTH);
 			if (dequeued[0] == end[0] && dequeued[1]-1 == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = NTH;
 				break;
 			}
 		}
 		else if (next == 1){
-			if (array[dequeued[1]][dequeued[0]-1] == SPC && (dequeued[0]-1 > -1)){			//West
-				enqueue(&Q, dequeued[0]-1, dequeued[1]);				
-				array[dequeued[1]][dequeued[0]-1] = DNE;
-				camefrom[dequeued[1]][dequeued[0]-1] = WST;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0]-1, dequeued[1], WST);
 			if (dequeued[0]-1 == end[0] && dequeued[1] == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = WST;
 				break;
 			}	
 		}
 		else if (next == 2){
-			if (array[dequeued[1]+1][dequeued[0]] == SPC && (dequeued[1]+1 < ROW)){			//South	
-				enqueue(&Q, dequeued[0], dequeued[1]+1);				
-				array[dequeued[1]+1][dequeued[0]] = DNE;
-				camefrom[dequeued[1]+1][dequeued[0]] = STH;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0], dequeued[1]+1, STH);
 			if (dequeued[0] == end[0] && dequeued[1]+1 == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = STH;
 				break;
 			}
 		}		
 		else {
-			
-			if (array[dequeued[1]][dequeued[0]+1] == SPC && (dequeued[0]+1 < COL)){			//East
-				enqueue(&Q, dequeued[0]+1, dequeued[1]);				
-				array[dequeued[1]][dequeued[0]+1] = DNE;
-				camefrom[dequeued[1]][dequeued[0]+1] = EST;
-				Sleep(SLP);
-				system("cls");
-				printGrid(array);
-				printf("\n");
-				printGrid(camefrom);
-			}
+			queueTile(array, camefrom, &Q, dequeued[0]+1, dequeued[1], EST);
 			if (dequeued[0]+1 == end[0] && dequeued[1] == end[1]){
 				camefrom[dequeued[1]-1][dequeued[0]] = EST;
 				break;
