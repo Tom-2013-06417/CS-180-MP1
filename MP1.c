@@ -9,7 +9,7 @@
 #define DNE 48
 #define STR 71
 #define GOL 65
-#define SLP 0
+#define SLP 1
 #define INF -1
 
 #define NTH 25
@@ -257,12 +257,16 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	
 	int * dequeued;																		//Initialize all the variables
 	int * orderQueue;
-	int i, j, counter, next;
+	int i, j, next;
 	float distNorth, distWest, distSouth, distEast;
 	int visitedArray[ROW][COL];
 	float distanceArray[ROW][COL];	
+	
 	Queue Q;
 	initQueue(&Q);
+
+	Queue Neighbors;
+	initQueue(&Neighbors);
 
 
 	array[start[1]][start[0]] = STR;													//Mark the start coordinate
@@ -367,93 +371,29 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		orderQueue = rank(distNorth, distWest, distSouth, distEast);
 
 		
+		for (i=0; i<4; i++){
 
-		for (counter=0; counter<4; counter++){												//Determine first to explore
-			if (orderQueue[counter] == 0){
-				next = counter;
-				break;
+			for (j=0; j<4; j++){												//Determine first to explore
+				if (orderQueue[j] == i){
+					next = j;
+					break;
+				}
 			}
-		}
 
-		if (next == 0) {
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0], dequeued[1]-1, NTH);
-		}
-		else if (next == 1){
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0]-1, dequeued[1], WST);	
-		}
-		else if (next == 2){
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0], dequeued[1]+1, STH);
-		}		
-		else {
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0]+1, dequeued[1], EST);
+			if (next == 0) queueTile(array, camefrom, visitedArray, &Neighbors, dequeued[0], dequeued[1]-1, NTH);
+			else if (next == 1) queueTile(array, camefrom, visitedArray, &Neighbors, dequeued[0]-1, dequeued[1], WST);	
+			else if (next == 2)	queueTile(array, camefrom, visitedArray, &Neighbors, dequeued[0], dequeued[1]+1, STH);		
+			else queueTile(array, camefrom, visitedArray, &Neighbors, dequeued[0]+1, dequeued[1], EST);
 
 		}
 
-
-		for (counter=0; counter<4; counter++){												//Determine second to explore
-			if (orderQueue[counter] == 1){
-				next = counter;
-				break;
-			}
-		}
-
-		if (next == 0) {
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0], dequeued[1]-1, NTH);
-		}
-		else if (next == 1){
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0]-1, dequeued[1], WST);	
-		}
-		else if (next == 2){
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0], dequeued[1]+1, STH);
-		}		
-		else {
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0]+1, dequeued[1], EST);
-
+		while (!isEmptyQueue(&Neighbors)){
+			dequeued = dequeue(&Neighbors);
+			enqueue(&Q, dequeued[0], dequeued[1]);
 		}
 
 
 
-		for (counter=0; counter<4; counter++){												//Determine third to explore
-			if (orderQueue[counter] == 2){
-				next = counter;
-				break;
-			}
-		}
-
-		if (next == 0) {
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0], dequeued[1]-1, NTH);
-		}
-		else if (next == 1){
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0]-1, dequeued[1], WST);	
-		}
-		else if (next == 2){
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0], dequeued[1]+1, STH);
-		}		
-		else {
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0]+1, dequeued[1], EST);
-		}
-
-
-
-		for (counter=0; counter<4; counter++){												//Determine fourth to explore
-			if (orderQueue[counter] == 3){
-				next = counter;
-				break;
-			}
-		}
-
-		if (next == 0) {
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0], dequeued[1]-1, NTH);
-		}
-		else if (next == 1){
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0]-1, dequeued[1], WST);	
-		}
-		else if (next == 2){
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0], dequeued[1]+1, STH);
-		}		
-		else {
-			queueTile(array, camefrom, visitedArray, &Q, dequeued[0]+1, dequeued[1], EST);
-		}
 	}
 }
 
@@ -465,6 +405,7 @@ void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	Sleep(SLP);
 	system("cls");
 	printGrid(array);
+
 
 	if (array[start[1]-1][start[0]] == SPC && (start[1]-1 > -1)){
 		temp[0] = start[0];
@@ -506,7 +447,7 @@ int main(){
 
 	int grid[ROW][COL];
 	int startpt[2] = {1, 1};
-	int endpt[2] = {29, 14};
+	int endpt[2] = {24, 10};
 
 	int * temp;
 
@@ -530,7 +471,7 @@ int main(){
 	Sleep(1000);*/
 	
 	cleanGrid(grid);
-	quadrilateralGenerator(grid, 3, 3, 4, 11);
+	//quadrilateralGenerator(grid, 3, 3, 4, 11);
 	quadrilateralGenerator(grid, 13, 4, 14, 14);
 	BFS(grid, gridBFS, startpt, endpt);
 	//printf("\n");
