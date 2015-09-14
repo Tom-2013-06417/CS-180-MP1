@@ -1,0 +1,23 @@
+int pnpoly(int nvert, float *vertx, float *verty, float testx, float testy)
+{
+  int i, j, c = 0;
+  for (i = 0, j = nvert-1; i < nvert; j = i++) {
+    if ( ((verty[i]>testy) != (verty[j]>testy)) &&
+     (testx < (vertx[j]-vertx[i]) * (testy-verty[i]) / (verty[j]-verty[i]) + vertx[i]) )
+       c = !c;
+  }
+  return c;
+}
+
+
+The algorithm is ray-casting to the right. Each iteration of the loop, the test point is checked against one of the polygon's edges. The first line of the if-test succeeds if the point's y-coord is within the edge's scope. The second line checks whether the test point is to the left of the line (I think - I haven't got any scrap paper to hand to check). If that is true the line drawn rightwards from the test point crosses that edge.
+
+By repeatedly inverting the value of c, the algorithm counts how many times the rightward line crosses the polygon. If it crosses an odd number of times, then the point is inside; if an even number, the point is outside.
+
+
+
+I would have concerns with a) the accuracy of floating-point arithmetic, and b) the effects of having a horizontal edge, or a test point with the same y-coord as a vertex, though.
+
+
+
+Chowlett is correct in every way, shape, and form. The algorithm assumes that if your point is on the line of the polygon, then that is outside - for some cases, this is false. Changing the two '>' operators to '>=' and changing '<' to '<=' will fix that.
