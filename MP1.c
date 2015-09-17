@@ -2,19 +2,20 @@
 #include <math.h>
 #include <windows.h>
 
-#define ROW 15
-#define COL 50
+#define ROW 20
+#define COL 40
 #define OBS 32
-#define SPC 249
+#define SPC 46
 #define DNE 35
-#define STR 83
-#define GOL 71
-#define SLP 10
+#define STR 65
+#define GOL 90
+#define SLP 100
 #define INF -1
 
 #define NON 32
 #define DOT 46
 #define ZRO 48
+#define PTH 254
 
 #define NTH 25
 #define WST 26
@@ -132,7 +133,6 @@ void traverseQueue(Queue * Q){
 		printf("%d)  ", curr->coord[1]);
 		curr = curr->next;
 	}
-	free(curr);
 	printf("NULL\n");
 }
 
@@ -186,34 +186,6 @@ float distanceFormula(int x1, int y1, int x2, int y2){
 	return sqrt(pow((float)x2-(float)x1, 2)+pow((float)y2-(float)y1, 2));
 }
 
-int * rank(float n, float w, float s, float e){
-	float original[4];
-	static int rank[4];
-	int i, j, foo, temp;
-
-	original[0] = n;
-	original[1] = w;
-	original[2] = s;
-	original[3] = e;
-
-	for (i=0; i<4; i++){
-		rank[i] = 0;
-	}
-
-	for (i = 0; i<4; i++){
-		if (original[i] == INF) rank[i] = INF;
-	}
-
-	for (i=1; i<4; i++){
-		for (j=0; j<i; j++){
-			if (original[j] <= original[i] && original[j] != INF && original[i] != INF) rank[i]++;
-			else if (original[j] > original[i] && original[j] != INF && original[i] != INF) rank[j]++;
-		}
-	}
-
-	return rank;
-}
-
 void gridDists(float array[][COL], int x, int y){
 	int i, j;
 
@@ -233,6 +205,22 @@ int isPassable(int array[][COL], int x, int y){
 	if (array[y][x] != OBS) return 1;
 	return 0;
 }
+
+void printPath(int array[][COL], Queue * Q){
+	QueueNode * curr;
+	curr = Q->front;
+
+	//cleanGrid(array);
+
+	while (curr != NULL){
+		array[curr->coord[1]][curr->coord[0]] = PTH;
+		Sleep(SLP);
+		system("cls");
+		printGrid(array);
+		curr = curr->next;
+	}	
+}
+
 
 Queue Neighbors(int array[][COL], int camefrom[][COL], int x, int y){
 	Queue Neighbor;
@@ -271,6 +259,8 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	initQueue(&Q);
 
 	Queue nb;
+	Queue pathtrace;
+	initQueue(&pathtrace);
 
 	if (!isPassable(array, start[0], start[1])) return;	
 
@@ -292,33 +282,57 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 
 		dequeued = dequeue(&Q);
 
-		if (dequeued[0] == end[0] && dequeued[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
-			array[start[1]][start[0]] = STR;											//Mark the start coordinate
-			array[end[1]][end[0]] = GOL;												//Mark the end coordinate
-			camefrom[start[1]][start[0]] = STR;											//Mark the start coordinate
-			camefrom[end[1]][end[0]] = GOL;			
-			break;
-		}
-
 		visitedArray[dequeued[1]][dequeued[0]] = 1;				
 		array[dequeued[1]][dequeued[0]] = DNE;	
-		Sleep(SLP);
-		system("cls");
+		//Sleep(SLP);
+/*		system("cls");
 		printGrid(array);
 		printf("\n");
-		printGrid(camefrom);
+		printGrid(camefrom);*/
 
-		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);		
+		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);
+
+		if (dequeued[0] == end[0] && dequeued[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
+			array[start[1]][start[0]] = STR;											//Mark the start coordinate
+			array[end[1]][end[0]] = GOL;												//Mark the end coordinate	
+			break;
+		}		
 		
 		//Expand the neighbors by selecting the closest one. Queue Neighbors first into Neighbor Queue (becomes sorted). Dequeue them to the main Queue one by one so that their neigbhors will be enqueued in the future:
 
 		while (!isEmptyQueue(&nb)){														//Now that we have the sorted nb, dequeue them then visit!
 			dequeuedNeighbor = dequeue(&nb);
-			if (visitedArray[dequeuedNeighbor[1]][dequeuedNeighbor[0]] == 0){							//Visit nodes if they haven't been visited though. Otherwise, skip
+			if (visitedArray[dequeuedNeighbor[1]][dequeuedNeighbor[0]] == 0){			//Visit nodes if they haven't been visited though. Otherwise, skip
 				enqueue(&Q, dequeuedNeighbor[0], dequeuedNeighbor[1]);				
 			}
 		}
 	}
+	
+	//printGrid(array);
+	//printf("\n");
+
+	enqueue(&pathtrace, end[0], end[1]);
+	
+	while (1){
+		if (pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1]) break;
+		switch(camefrom[pathtrace.rear->coord[1]][pathtrace.rear->coord[0]]){
+			case NTH:
+				enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]+1);				
+				break;
+			case WST:
+				enqueue(&pathtrace, pathtrace.rear->coord[0]+1, pathtrace.rear->coord[1]);				
+				break;
+			case STH:
+				enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]-1);
+				break;
+			case EST:
+				enqueue(&pathtrace, pathtrace.rear->coord[0]-1, pathtrace.rear->coord[1]);
+				break;
+		}
+	}
+
+	reverseQueue(&pathtrace);
+	printPath(camefrom, &pathtrace);
 }
 
 void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
@@ -329,6 +343,12 @@ void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	Sleep(SLP);
 	system("cls");
 	printGrid(array);
+
+	if (start[0] == end[0] && start[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
+		array[start[1]][start[0]] = STR;											//Mark the start coordinate
+		array[end[1]][end[0]] = GOL;												//Mark the end coordinate	
+		return;
+	}	
 
 
 	if (array[start[1]-1][start[0]] == SPC && (start[1]-1 > -1)){
@@ -347,6 +367,14 @@ void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		DFS(array, camefrom, temp, end);
 	}
 
+	if (array[start[1]][start[0]+1] == SPC && (start[0]+1 < COL)){
+		temp[0] = start[0]+1;
+		temp[1] = start[1];
+
+		camefrom[temp[1]][temp[0]] = EST;
+		DFS(array, camefrom, temp, end);
+	}
+
 	if (array[start[1]+1][start[0]] == SPC && (start[1]+1 < ROW)){
 		temp[0] = start[0];
 		temp[1] = start[1]+1;
@@ -355,13 +383,7 @@ void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		DFS(array, camefrom, temp, end);
 	}
 
-	if (array[start[1]][start[0]+1] == SPC && (start[0]+1 < COL)){
-		temp[0] = start[0]+1;
-		temp[1] = start[1];
 
-		camefrom[temp[1]][temp[0]] = EST;
-		DFS(array, camefrom, temp, end);
-	}
 }
 
 
@@ -370,8 +392,8 @@ int main(){
 	system("cls");
 
 	int grid[ROW][COL];
-	int startpt[2] = {0, 9};
-	int endpt[2] = {49, 14};
+	int startpt[2] = {6, 0};
+	int endpt[2] = {20, 19};
 
 	int * temp;
 
@@ -385,7 +407,7 @@ int main(){
 	Queue Q;
 	initQueue(&Q);
 
-/*	quadrilateralGenerator(grid, 10, 4, 28, 7);
+	/*	quadrilateralGenerator(grid, 10, 4, 28, 7);
 	quadrilateralGenerator(grid, 27, 4, 30, 14);
 	triangleGenerator(grid, 16, 10, 7);
 	printGrid(grid);
@@ -402,9 +424,21 @@ int main(){
 	quadrilateralGenerator(grid, 2, 8, 2, 12);
 	quadrilateralGenerator(grid, 0, 11, 2, 11);
 	quadrilateralGenerator(grid, 7, 0, 7, 2);
-	quadrilateralGenerator(grid, 2, 2, 7, 2);	
-	printGrid(grid);
+	quadrilateralGenerator(grid, 2, 2, 7, 2);
+
+
+	//triangleGenerator(grid, 165, 20, 100);	
+	//printGrid(grid);
 	BFS(grid, gridBFS, startpt, endpt);
+	Sleep(1000);
+	system("cls");
+	cleanGrid(grid);
+	quadrilateralGenerator(grid, 2, 2, 2, 5);
+	quadrilateralGenerator(grid, 2, 8, 2, 12);
+	quadrilateralGenerator(grid, 0, 11, 2, 11);
+	quadrilateralGenerator(grid, 7, 0, 7, 2);
+	quadrilateralGenerator(grid, 2, 2, 7, 2);
+	DFS(grid, gridDFS, startpt, endpt);
 
 	//printf("\n");
 	//printGrid(gridBFS);
