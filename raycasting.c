@@ -5,7 +5,7 @@
 #define ROW 15
 #define COL 30
 #define OBS 254
-#define SPC 32
+#define SPC 46
 #define DNE 48
 #define STR 71
 #define GOL 65
@@ -126,7 +126,7 @@ int main(){
 	
 	int grid[ROW][COL];
 
-	float shape2[2][3] = {{7, 2, 6}, {1, 3, 5}};
+	float shape2[2][3] = {{12, 8, 5}, {6, 8, 5}};
 	float shape3[2][3] = {{7, 11, 12}, {8, 9, 2}};
 
 	cleanGrid(grid);

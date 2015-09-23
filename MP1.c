@@ -1,15 +1,16 @@
 #include <stdio.h>
 #include <math.h>
 #include <windows.h>
+#include <time.h>
 
-#define ROW 20
-#define COL 40
-#define OBS 32
-#define SPC 46
+#define ROW 11
+#define COL 51
+#define OBS 254
+#define SPC 32
 #define DNE 35
 #define STR 65
 #define GOL 90
-#define SLP 100
+#define SLP 5
 #define INF -1
 
 #define NON 32
@@ -140,6 +141,18 @@ void traverseQueue(Queue * Q){
 
 //FUNCTIONS
 
+
+
+void copyGrid(int array1[][COL], int array2[][COL]){
+	int i, j;
+
+	for (i=0; i<ROW; i++){
+		for (j=0; j<COL; j++){
+			array2[i][j] = array1[i][j];
+		}
+	}
+
+}
 
 void cleanGrid(int array[][COL]){
 	int i, j;
@@ -285,10 +298,10 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		visitedArray[dequeued[1]][dequeued[0]] = 1;				
 		array[dequeued[1]][dequeued[0]] = DNE;	
 		//Sleep(SLP);
-/*		system("cls");
+		system("cls");
 		printGrid(array);
 		printf("\n");
-		printGrid(camefrom);*/
+		printGrid(camefrom);
 
 		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);
 
@@ -307,14 +320,10 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 			}
 		}
 	}
-	
-	//printGrid(array);
-	//printf("\n");
 
 	enqueue(&pathtrace, end[0], end[1]);
 	
-	while (1){
-		if (pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1]) break;
+	while (!(pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1]) && !isEmptyQueue(&Q)){
 		switch(camefrom[pathtrace.rear->coord[1]][pathtrace.rear->coord[0]]){
 			case NTH:
 				enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]+1);				
@@ -336,8 +345,8 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 }
 
 void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
+	
 	int temp[2];
-
 
 	array[start[1]][start[0]] = DNE;
 	Sleep(SLP);
@@ -387,25 +396,133 @@ void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 }
 
 
+//MAZE GENERATOR CODECOPY-PASTED FROM https://azerdark.wordpress.com/2009/03/29/588/
+
+void init_maze(int maze[][COL]){
+	int a, b;
+	for(a = 0; a < ROW; a++){
+		for(b = 0; b < COL; b++){
+			if(a % 2 == 0 || b % 2 == 0)
+				maze[a][b] = OBS;
+			else
+				maze[a][b] = SPC;
+		}
+	}
+}
+
+int is_closed(int maze[][COL], int x, int y){
+	if(maze[x - 1][y]  == OBS && maze[x][y - 1] == OBS && maze[x][y + 1] == OBS && maze[x + 1][y] == OBS && isInsideGrid(maze, y, x)) return 1; 
+	return 0;
+}
+ 
+void maze_generator(int indeks, int maze[][COL], int backtrack_x[COL*ROW], int backtrack_y[ROW*COL], int x, int y, int visited){
+	
+	if(visited < (ROW/2)*(COL/2)){														//If there are still uncarved walls, 
+		
+		int neighbour_valid = -1;
+		int neighbour_x[4];
+		int neighbour_y[4];
+		int step[4];
+ 
+		int x_next;
+		int y_next;
+
+		if(x - 2 > 0 && is_closed(maze, x - 2, y)){										//up
+			neighbour_valid++;
+			neighbour_x[neighbour_valid]=x - 2;;
+			neighbour_y[neighbour_valid]=y;
+			step[neighbour_valid]=1;
+		}
+ 
+		if(y - 2 > 0 && is_closed(maze, x, y - 2)){										//left
+			neighbour_valid++;
+			neighbour_x[neighbour_valid]=x;
+			neighbour_y[neighbour_valid]=y - 2;
+			step[neighbour_valid]=2;
+		}
+ 
+		if(y + 2 < COL + 1 && is_closed(maze, x, y + 2)){								//right
+			neighbour_valid++;
+			neighbour_x[neighbour_valid]=x;
+			neighbour_y[neighbour_valid]=y + 2;
+			step[neighbour_valid]=3;
+ 
+		}
+ 
+		if(x + 2 < ROW + 1 && is_closed(maze, x + 2, y)){								//down
+			neighbour_valid++;
+			neighbour_x[neighbour_valid]=x+2;
+			neighbour_y[neighbour_valid]=y;
+			step[neighbour_valid]=4;
+		}
+ 
+		if(neighbour_valid == -1){														//backtrack if no more neighbors
+			x_next = backtrack_x[indeks];
+			y_next = backtrack_y[indeks];
+			indeks--;
+		}
+ 
+		if(neighbour_valid != -1){														//if it has neighbors, randomly pick one to go next, then deepen the search
+			int randomization = neighbour_valid + 1;
+			int random = rand()%randomization;
+			
+			x_next = neighbour_x[random];
+			y_next = neighbour_y[random];
+			
+			indeks++;
+			
+			backtrack_x[indeks] = x_next;
+			backtrack_y[indeks] = y_next;
+ 
+			int rstep = step[random];
+ 
+			if(rstep == 1) maze[x_next+1][y_next] = SPC;
+			else if(rstep == 2)	maze[x_next][y_next + 1] = SPC;
+			else if(rstep == 3)	maze[x_next][y_next - 1] = SPC;
+			else if(rstep == 4)	maze[x_next - 1][y_next] = SPC;
+			
+			visited++;
+		}		
+ 
+		maze_generator(indeks, maze, backtrack_x, backtrack_y, x_next, y_next, visited);
+	}
+}
+
+//END MAZE GENERATOR CODE
+
+
 int main(){
 
 	system("cls");
 
-	int grid[ROW][COL];
-	int startpt[2] = {6, 0};
-	int endpt[2] = {20, 19};
 
-	int * temp;
+	srand((unsigned)time(NULL));
+
+	int grid[ROW][COL];
+	int startpt[2] = {1, 1};
+	int endpt[2] = {49, 9};
 
 	int gridBFS[ROW][COL];
 	int gridDFS[ROW][COL];
+
+	int indeks = 0;
+	int maze[ROW][COL];
+	int mazeBackup[ROW][COL];
+	
+	int backtrack_x[(ROW-1)*(COL-1)];
+	int backtrack_y[(ROW-1)*(COL-1)];
+
+	
+	Queue Q;
+	initQueue(&Q);
+
+	init_maze(maze);
 
 	cleanGrid(grid);
 	cleanGrid(gridBFS);
 	cleanGrid(gridDFS);
 
-	Queue Q;
-	initQueue(&Q);
+
 
 	/*	quadrilateralGenerator(grid, 10, 4, 28, 7);
 	quadrilateralGenerator(grid, 27, 4, 30, 14);
@@ -419,26 +536,46 @@ int main(){
 	
 	Sleep(1000);*/
 	
-	cleanGrid(grid);
-	quadrilateralGenerator(grid, 2, 2, 2, 5);
-	quadrilateralGenerator(grid, 2, 8, 2, 12);
-	quadrilateralGenerator(grid, 0, 11, 2, 11);
-	quadrilateralGenerator(grid, 7, 0, 7, 2);
-	quadrilateralGenerator(grid, 2, 2, 7, 2);
+	// cleanGrid(grid);
+	// quadrilateralGenerator(grid, 2, 2, 2, 5);
+	// quadrilateralGenerator(grid, 2, 8, 2, 12);
+	// quadrilateralGenerator(grid, 0, 11, 2, 11);
+	// quadrilateralGenerator(grid, 7, 0, 7, 2);
+	// quadrilateralGenerator(grid, 2, 2, 7, 2);
 
 
 	//triangleGenerator(grid, 165, 20, 100);	
 	//printGrid(grid);
-	BFS(grid, gridBFS, startpt, endpt);
-	Sleep(1000);
-	system("cls");
-	cleanGrid(grid);
-	quadrilateralGenerator(grid, 2, 2, 2, 5);
-	quadrilateralGenerator(grid, 2, 8, 2, 12);
-	quadrilateralGenerator(grid, 0, 11, 2, 11);
-	quadrilateralGenerator(grid, 7, 0, 7, 2);
-	quadrilateralGenerator(grid, 2, 2, 7, 2);
-	DFS(grid, gridDFS, startpt, endpt);
+	//BFS(grid, gridBFS, startpt, endpt);
+	//printGrid(gridBFS);
+	//Sleep(1000);
+	//system("pause");
+	//cleanGrid(grid); 
+
+ 
+	backtrack_x[indeks] = 1;
+	backtrack_y[indeks] = 1;
+ 
+	maze_generator(indeks, maze, backtrack_x, backtrack_y, 1, 1, 1);
+	
+	copyGrid(maze, mazeBackup);
+
+	printGrid(maze);
+	BFS(maze, gridBFS, startpt, endpt);
+
+	system("pause");
+
+	copyGrid(mazeBackup, maze);
+	printGrid(maze);
+	DFS(maze, gridDFS, startpt, endpt);
+
+	// quadrilateralGenerator(grid, 2, 2, 2, 5);
+	// quadrilateralGenerator(grid, 2, 8, 2, 12);
+	// quadrilateralGenerator(grid, 0, 11, 2, 11);
+	// quadrilateralGenerator(grid, 7, 0, 7, 2);
+	// quadrilateralGenerator(grid, 2, 2, 7, 2);
+	// DFS(grid, gridDFS, startpt, endpt);
+	//printGrid(gridDFS);
 
 	//printf("\n");
 	//printGrid(gridBFS);

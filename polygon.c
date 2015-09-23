@@ -2,12 +2,12 @@
 #include <math.h>
 #include <windows.h>
 
-#define ROW 15
+#define ROW 30
 #define COL 30
 #define OBS 254
 #define EDG 35
 #define VTX 33
-#define SPC 32
+#define SPC 46
 #define DNE 48
 #define STR 71
 #define GOL 65
