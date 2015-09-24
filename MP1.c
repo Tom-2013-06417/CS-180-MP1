@@ -3,18 +3,19 @@
 #include <windows.h>
 #include <time.h>
 
-#define ROW 11
-#define COL 51
-#define OBS 254
+#define ROW 41
+#define COL 71
+#define OBS 250
 #define SPC 32
 #define DNE 35
 #define STR 65
 #define GOL 90
-#define SLP 5
+#define SLP 10
 #define INF -1
 
 #define NON 32
-#define DOT 46
+#define DOT 250
+#define BLK 254
 #define ZRO 48
 #define PTH 254
 
@@ -223,15 +224,13 @@ void printPath(int array[][COL], Queue * Q){
 	QueueNode * curr;
 	curr = Q->front;
 
-	//cleanGrid(array);
-
 	while (curr != NULL){
 		array[curr->coord[1]][curr->coord[0]] = PTH;
-		Sleep(SLP);
-		system("cls");
-		printGrid(array);
+		// Sleep(SLP);
+		// system("cls");
+		// printGrid(array);
 		curr = curr->next;
-	}	
+	}
 }
 
 
@@ -265,7 +264,7 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	
 	int * dequeued;																		//Initialize all the variables
 	int * dequeuedNeighbor;
-	int i, j, next;
+	int i, j, next, found=0;
 	int visitedArray[ROW][COL];
 	
 	Queue Q;
@@ -297,17 +296,18 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 
 		visitedArray[dequeued[1]][dequeued[0]] = 1;				
 		array[dequeued[1]][dequeued[0]] = DNE;	
-		//Sleep(SLP);
-		system("cls");
-		printGrid(array);
-		printf("\n");
-		printGrid(camefrom);
+		// Sleep(SLP);
+		// system("cls");
+		// printGrid(array);
+		//printf("\n");
+		//printGrid(camefrom);
 
 		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);
 
 		if (dequeued[0] == end[0] && dequeued[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
 			array[start[1]][start[0]] = STR;											//Mark the start coordinate
-			array[end[1]][end[0]] = GOL;												//Mark the end coordinate	
+			array[end[1]][end[0]] = GOL;												//Mark the end coordinate
+			found = 1;	
 			break;
 		}		
 		
@@ -321,78 +321,122 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		}
 	}
 
-	enqueue(&pathtrace, end[0], end[1]);
-	
-	while (!(pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1]) && !isEmptyQueue(&Q)){
-		switch(camefrom[pathtrace.rear->coord[1]][pathtrace.rear->coord[0]]){
-			case NTH:
-				enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]+1);				
-				break;
-			case WST:
-				enqueue(&pathtrace, pathtrace.rear->coord[0]+1, pathtrace.rear->coord[1]);				
-				break;
-			case STH:
-				enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]-1);
-				break;
-			case EST:
-				enqueue(&pathtrace, pathtrace.rear->coord[0]-1, pathtrace.rear->coord[1]);
-				break;
+	if (found == 1){
+
+		enqueue(&pathtrace, end[0], end[1]);
+		
+		while (!(pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1])){
+			switch(camefrom[pathtrace.rear->coord[1]][pathtrace.rear->coord[0]]){
+				case NTH:
+					enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]+1);				
+					break;
+				case WST:
+					enqueue(&pathtrace, pathtrace.rear->coord[0]+1, pathtrace.rear->coord[1]);				
+					break;
+				case STH:
+					enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]-1);
+					break;
+				case EST:
+					enqueue(&pathtrace, pathtrace.rear->coord[0]-1, pathtrace.rear->coord[1]);
+					break;
+				default:
+					break;
+			}
 		}
+
+		reverseQueue(&pathtrace);
+		printPath(camefrom, &pathtrace);
 	}
 
-	reverseQueue(&pathtrace);
-	printPath(camefrom, &pathtrace);
+	else printf("No path found.");
 }
 
-void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
+int DFS(int array[][COL], int camefrom[][COL], int start[], int end[], int next[]){
+
+	array[end[1]][end[0]] = GOL;
 	
 	int temp[2];
+	int switcher = 0;
 
-	array[start[1]][start[0]] = DNE;
-	Sleep(SLP);
-	system("cls");
-	printGrid(array);
+	array[next[1]][next[0]] = DNE;
 
-	if (start[0] == end[0] && start[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
-		array[start[1]][start[0]] = STR;											//Mark the start coordinate
+	// Sleep(SLP);
+	// system("cls");
+	// printGrid(array);
+	//printf("\n");
+	//printGrid(camefrom);
+
+
+	if (next[0] == end[0] && next[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
+		array[next[1]][next[0]] = STR;											//Mark the start coordinate
 		array[end[1]][end[0]] = GOL;												//Mark the end coordinate	
-		return;
-	}	
+		switcher = 1;
+	}
 
-
-	if (array[start[1]-1][start[0]] == SPC && (start[1]-1 > -1)){
-		temp[0] = start[0];
-		temp[1] = start[1]-1;
+	if (isPassable(array, next[0], next[1]-1) && isInsideGrid(array, next[0], next[1]-1) && camefrom[next[1]-1][next[0]] == SPC && switcher == 0){
+		temp[0] = next[0];
+		temp[1] = next[1]-1;
 
 		camefrom[temp[1]][temp[0]] = NTH;
-		DFS(array, camefrom, temp, end);
+		switcher = DFS(array, camefrom, start, end, temp);
 	}
 
-	if (array[start[1]][start[0]-1] == SPC && (start[0]-1 > -1)){
-		temp[0] = start[0]-1;
-		temp[1] = start[1];
+	if (isPassable(array, next[0]-1, next[1]) && isInsideGrid(array, next[0]-1, next[1]) && camefrom[next[1]][next[0]-1] == SPC && switcher == 0){
+		temp[0] = next[0]-1;
+		temp[1] = next[1];
 		
 		camefrom[temp[1]][temp[0]] = WST;
-		DFS(array, camefrom, temp, end);
+		switcher = DFS(array, camefrom, start, end, temp);
 	}
 
-	if (array[start[1]][start[0]+1] == SPC && (start[0]+1 < COL)){
-		temp[0] = start[0]+1;
-		temp[1] = start[1];
+	if (isPassable(array, next[0]+1, next[1]) && isInsideGrid(array, next[0]+1, next[1]) && camefrom[next[1]][next[0]+1] == SPC && switcher == 0){
+		temp[0] = next[0]+1;
+		temp[1] = next[1];
 
 		camefrom[temp[1]][temp[0]] = EST;
-		DFS(array, camefrom, temp, end);
+		switcher = DFS(array, camefrom, start, end, temp);
 	}
 
-	if (array[start[1]+1][start[0]] == SPC && (start[1]+1 < ROW)){
-		temp[0] = start[0];
-		temp[1] = start[1]+1;
+	if (isPassable(array, next[0], next[1]+1) && isInsideGrid(array, next[0], next[1]+1) && camefrom[next[1]+1][next[0]] == SPC && switcher == 0){
+		temp[0] = next[0];
+		temp[1] = next[1]+1;
 
 		camefrom[temp[1]][temp[0]] = STH;
-		DFS(array, camefrom, temp, end);
+		switcher = DFS(array, camefrom, start, end, temp);
 	}
 
+	if (switcher == 0) return 0;
+		
+	if (switcher == 1){
 
+		Queue pathtrace;
+		initQueue(&pathtrace);
+
+		enqueue(&pathtrace, end[0], end[1]);
+
+		while (!(pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1])){		
+			switch(camefrom[pathtrace.rear->coord[1]][pathtrace.rear->coord[0]]){
+				case NTH:
+					enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]+1);				
+					break;
+				case WST:
+					enqueue(&pathtrace, pathtrace.rear->coord[0]+1, pathtrace.rear->coord[1]);				
+					break;
+				case STH:
+					enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]-1);
+					break;
+				case EST:
+					enqueue(&pathtrace, pathtrace.rear->coord[0]-1, pathtrace.rear->coord[1]);
+					break;
+			}
+		}
+
+		reverseQueue(&pathtrace);
+		printPath(camefrom, &pathtrace);
+		return 2;
+	}
+
+	else return 2;
 }
 
 
@@ -500,7 +544,7 @@ int main(){
 
 	int grid[ROW][COL];
 	int startpt[2] = {1, 1};
-	int endpt[2] = {49, 9};
+	int endpt[2] = {31, 9};
 
 	int gridBFS[ROW][COL];
 	int gridDFS[ROW][COL];
@@ -524,17 +568,13 @@ int main(){
 
 
 
-	/*	quadrilateralGenerator(grid, 10, 4, 28, 7);
-	quadrilateralGenerator(grid, 27, 4, 30, 14);
-	triangleGenerator(grid, 16, 10, 7);
-	printGrid(grid);
+	// quadrilateralGenerator(grid, 10, 4, 28, 7);
+	// quadrilateralGenerator(grid, 27, 4, 30, 14);
+	// triangleGenerator(grid, 16, 10, 7);
+	// printGrid(grid);
 
-	Sleep(1000);
-
-	DFS(grid, gridDFS, startpt, endpt);
-	printGrid(gridDFS);
-	
-	Sleep(1000);*/
+	// if (DFS(grid, gridDFS, startpt, endpt, startpt)){
+	// }
 	
 	// cleanGrid(grid);
 	// quadrilateralGenerator(grid, 2, 2, 2, 5);
@@ -544,13 +584,13 @@ int main(){
 	// quadrilateralGenerator(grid, 2, 2, 7, 2);
 
 
-	//triangleGenerator(grid, 165, 20, 100);	
-	//printGrid(grid);
-	//BFS(grid, gridBFS, startpt, endpt);
-	//printGrid(gridBFS);
-	//Sleep(1000);
-	//system("pause");
-	//cleanGrid(grid); 
+	// triangleGenerator(grid, 165, 20, 100);	
+	// printGrid(grid);
+	// BFS(grid, gridBFS, startpt, endpt);
+	// printGrid(gridBFS);
+	// Sleep(1000);
+	// system("pause");
+	// cleanGrid(grid); 
 
  
 	backtrack_x[indeks] = 1;
@@ -559,15 +599,18 @@ int main(){
 	maze_generator(indeks, maze, backtrack_x, backtrack_y, 1, 1, 1);
 	
 	copyGrid(maze, mazeBackup);
-
-	printGrid(maze);
+	//printGrid(maze);
 	BFS(maze, gridBFS, startpt, endpt);
 
-	system("pause");
-
 	copyGrid(mazeBackup, maze);
-	printGrid(maze);
-	DFS(maze, gridDFS, startpt, endpt);
+	if (DFS(maze, gridDFS, startpt, endpt, startpt)){
+	}
+
+	//system("pause");
+
+	printGrid(gridBFS);
+	printf("\n");
+	printGrid(gridDFS);
 
 	// quadrilateralGenerator(grid, 2, 2, 2, 5);
 	// quadrilateralGenerator(grid, 2, 8, 2, 12);
