@@ -3,8 +3,8 @@
 #include <windows.h>
 #include <time.h>
 
-#define ROW 41
-#define COL 71
+#define ROW 201
+#define COL 401
 #define OBS 250
 #define SPC 32
 #define DNE 35
@@ -82,6 +82,7 @@ int * dequeue(Queue * Q){
 		alpha = Q->front;
 		Q->front = Q->front->next;
 		free(alpha);
+		free(alpha->coord);
 	}
 	return returnthis;
 }
@@ -136,6 +137,80 @@ void traverseQueue(Queue * Q){
 		curr = curr->next;
 	}
 	printf("NULL\n");
+}
+
+	//STACK
+
+
+
+typedef struct stacknode{
+	int * coord;
+	struct stacknode * next;
+} StackNode;
+typedef struct stack{
+	StackNode * top;
+} Stack;
+void initStack(Stack * S){
+	S->top = NULL;
+}
+int isEmptyStack(Stack * S){
+	return (S->top == NULL);
+}
+void stackOverflow(void){
+	printf("You have a stack overflow!\n\n");
+	exit(1);
+}
+void stackUnderflow(void){
+	printf("\nYou have a stack undeflow!\n\n");
+	exit(1);
+}
+void push(Stack * S, int x, int y){
+	StackNode * alpha;
+	alpha = (StackNode *)malloc(sizeof(StackNode));
+	if (alpha == NULL){
+		stackOverflow();
+	}
+
+	else {
+		alpha->coord = (int *)malloc(2*sizeof(int));
+		alpha->coord[0] = x;
+		alpha->coord[1] = y;
+		alpha->next = S->top;
+		S->top = alpha;
+	}
+}
+int * pop(Stack * S){
+	StackNode * alpha;
+	static int * returnthis;
+	if (S->top == NULL){
+		stackUnderflow();
+	}
+
+	else {
+		alpha = S->top;
+		returnthis = S->top->coord;
+		S->top = S->top->next;
+		free(alpha);
+		free(alpha->coord);
+	}
+
+	return returnthis;
+}
+void traverse(Stack * S){
+	StackNode * curr;
+	curr = S->top;
+
+	printf("\n\nTOP → ");
+
+	while (curr != NULL){
+		printf("(%d,", curr->coord[0]);
+		printf("%d)  ", curr->coord[1]);
+		curr = curr->next;
+	}
+
+	printf("NULL\n");
+
+	free(curr);
 }
 
 
@@ -265,7 +340,10 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	int * dequeued;																		//Initialize all the variables
 	int * dequeuedNeighbor;
 	int i, j, next, found=0;
-	int visitedArray[ROW][COL];
+	
+	int ** visitedArray = (int **)malloc(ROW * sizeof(int *));
+	for (i=0; i<ROW; i++)
+		visitedArray[i] = (int *)malloc(COL * sizeof(int));
 	
 	Queue Q;
 	initQueue(&Q);
@@ -349,9 +427,12 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	}
 
 	else printf("No path found.");
+	for (i=0; i<ROW; i++)
+         free(visitedArray[i]);
+	free(visitedArray);
 }
 
-int DFS(int array[][COL], int camefrom[][COL], int start[], int end[], int next[]){
+int DFS(int array[][COL], int camefrom[][COL], int start[], int end[], int next[]){	
 
 	array[end[1]][end[0]] = GOL;
 	
@@ -458,8 +539,12 @@ int is_closed(int maze[][COL], int x, int y){
 	if(maze[x - 1][y]  == OBS && maze[x][y - 1] == OBS && maze[x][y + 1] == OBS && maze[x + 1][y] == OBS && isInsideGrid(maze, y, x)) return 1; 
 	return 0;
 }
- 
-void maze_generator(int indeks, int maze[][COL], int backtrack_x[COL*ROW], int backtrack_y[ROW*COL], int x, int y, int visited){
+
+/*
+void maze_generator(int indeks, int maze[][COL], int backtrack_x[80601], int backtrack_y[80601], int x, int y, int visited){
+
+	Stack S;
+	initStack(&S);
 	
 	if(visited < (ROW/2)*(COL/2)){														//If there are still uncarved walls, 
 		
@@ -530,6 +615,90 @@ void maze_generator(int indeks, int maze[][COL], int backtrack_x[COL*ROW], int b
  
 		maze_generator(indeks, maze, backtrack_x, backtrack_y, x_next, y_next, visited);
 	}
+}*/
+ 
+void maze_generator(int indeks, int maze[][COL], int backtrack_x[(ROW-1)*(COL-1)], int backtrack_y[(ROW-1)*(COL-1)], int x, int y, int visited){
+
+	while (visited < (ROW/2)*(COL/2)){
+		
+		int * neighbour_valid = (int *)malloc(sizeof(int));
+		
+		*neighbour_valid = -1;
+
+		int * neighbour_x = (int *)malloc(4*sizeof(int));
+		int * neighbour_y = (int *)malloc(4*sizeof(int));
+		int * step = (int *)malloc(4*sizeof(int));
+ 
+		int * x_next = (int *)malloc(sizeof(int));
+		int * y_next = (int *)malloc(sizeof(int));
+
+		if(x - 2 > 0 && is_closed(maze, x - 2, y)){										//up
+			++*neighbour_valid;
+			neighbour_x[*neighbour_valid]=x - 2;
+			neighbour_y[*neighbour_valid]=y;
+			step[*neighbour_valid]=1;
+		}
+ 
+		if(y - 2 > 0 && is_closed(maze, x, y - 2)){										//left
+			++*neighbour_valid;
+			neighbour_x[*neighbour_valid]=x;
+			neighbour_y[*neighbour_valid]=y - 2;
+			step[*neighbour_valid]=2;
+		}
+ 
+		if(y + 2 < COL + 1 && is_closed(maze, x, y + 2)){								//right
+			++*neighbour_valid;
+			neighbour_x[*neighbour_valid]=x;
+			neighbour_y[*neighbour_valid]=y + 2;
+			step[*neighbour_valid]=3;
+ 
+		}
+ 
+		if(x + 2 < ROW + 1 && is_closed(maze, x + 2, y)){								//down
+			++*neighbour_valid;
+			neighbour_x[*neighbour_valid]=x+2;
+			neighbour_y[*neighbour_valid]=y;
+			step[*neighbour_valid]=4;
+		}
+ 
+		if(*neighbour_valid == -1){														//backtrack if no more neighbors
+			*x_next = backtrack_x[indeks];
+			*y_next = backtrack_y[indeks];
+			--indeks;
+		}
+ 
+		if(*neighbour_valid != -1){														//if it has neighbors, randomly pick one to go next, then deepen the search
+			int randomization = *neighbour_valid + 1;
+			int random = rand()%randomization;
+			
+			*x_next = neighbour_x[random];
+			*y_next = neighbour_y[random];
+			
+			indeks++;
+			
+			backtrack_x[indeks] = *x_next;
+			backtrack_y[indeks] = *y_next;
+ 
+			int rstep = step[random];
+ 
+			if(rstep == 1) maze[*x_next+1][*y_next] = SPC;
+			else if(rstep == 2)	maze[*x_next][*y_next + 1] = SPC;
+			else if(rstep == 3)	maze[*x_next][*y_next - 1] = SPC;
+			else if(rstep == 4)	maze[*x_next - 1][*y_next] = SPC;
+			
+			visited++;
+		}
+
+		x=*x_next;
+		y=*y_next;
+		
+		free(neighbour_valid);
+		free(neighbour_x);
+		free(neighbour_y);
+		free(step);
+		free(x_next);
+		free(y_next);
+	}
 }
 
 //END MAZE GENERATOR CODE
@@ -539,15 +708,15 @@ int main(){
 
 	system("cls");
 
-
 	srand((unsigned)time(NULL));
 
-	int grid[ROW][COL];
+	//int grid[ROW][COL];
 	int startpt[2] = {1, 1};
-	int endpt[2] = {31, 9};
+	int endpt[2] = {399, 199};
 
 	int gridBFS[ROW][COL];
 	int gridDFS[ROW][COL];
+
 
 	int indeks = 0;
 	int maze[ROW][COL];
@@ -562,7 +731,7 @@ int main(){
 
 	init_maze(maze);
 
-	cleanGrid(grid);
+	//cleanGrid(grid);
 	cleanGrid(gridBFS);
 	cleanGrid(gridDFS);
 
@@ -584,7 +753,7 @@ int main(){
 	// quadrilateralGenerator(grid, 2, 2, 7, 2);
 
 
-	// triangleGenerator(grid, 165, 20, 100);	
+	// triangleGenerator(grid, 165, 20, 100);
 	// printGrid(grid);
 	// BFS(grid, gridBFS, startpt, endpt);
 	// printGrid(gridBFS);
@@ -602,15 +771,17 @@ int main(){
 	//printGrid(maze);
 	BFS(maze, gridBFS, startpt, endpt);
 
-	copyGrid(mazeBackup, maze);
-	if (DFS(maze, gridDFS, startpt, endpt, startpt)){
-	}
+	//copyGrid(mazeBackup, maze);
+	//if (DFS(maze, gridDFS, startpt, endpt, startpt)){
+	//}
 
 	//system("pause");
 
+	printGrid(mazeBackup);
+	printf("\n");
 	printGrid(gridBFS);
 	printf("\n");
-	printGrid(gridDFS);
+	//printGrid(gridDFS);
 
 	// quadrilateralGenerator(grid, 2, 2, 2, 5);
 	// quadrilateralGenerator(grid, 2, 8, 2, 12);
