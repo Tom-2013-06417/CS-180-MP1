@@ -38,13 +38,20 @@ typedef struct queue{
 	QueueNode * rear;
 } Queue;
 
-float distanceFormula(int x1, int y1, int x2, int y2){
-	return abs(x1 - x2) + abs(y1 - y2);
+int heuristicDist(int x, int y, int endptx, int endpty){
+	return abs(endptx - x) + abs(endpty - y);
+	//return distanceFormula(x, y, endptx, endpty);
+	//return distanceFormula(x, y, endptx, endpty) + distanceFormula(x, y, startptx, startpty);
 }
 
-float heuristicDist(int x, int y, int startptx, int startpty, int endptx, int endpty){
-	return distanceFormula(x, y, endptx, endpty);
+int heuristicFxn(int x, int y, int startx, int starty, int endptx, int endpty){
+	return abs(endptx - x) + abs(endpty - y) + abs(startx - x) + abs(starty - y);
+	//return distanceFormula(x, y, endptx, endpty);
 	//return distanceFormula(x, y, endptx, endpty) + distanceFormula(x, y, startptx, startpty);
+}
+
+int getCost(int x, int y, int endptx, int endpty, int newCost){
+	return newCost + heuristicDist(x, y, endptx, endpty);
 }
 
 void initQueue(Queue * Q){
@@ -134,7 +141,7 @@ void reverseQueue(Queue * Q){
 	Q->front = Q->rear;
 	Q->rear = alpha;
 }
-void traverseQueue(Queue * Q, float endptx, float endpty){
+void traverseQueue(Queue * Q, int startptx, int startpty, int endptx, int endpty){
 	char c;
 	QueueNode * curr;
 
@@ -145,9 +152,10 @@ void traverseQueue(Queue * Q, float endptx, float endpty){
 	while (curr != NULL){
 		printf("(%d,", curr->coord[0]);
 		printf("%d)  ", curr->coord[1]);
-		printf("[%.0f]\n", distanceFormula(endptx, endpty, curr->coord[0], curr->coord[1]));
+		printf("[%d]\n", heuristicFxn(curr->coord[1], curr->coord[0], startptx, startpty, endptx, endpty));
 		curr = curr->next;
 	}
+
 	printf("NULL\n");
 	scanf("%c", &c);
 }
@@ -210,12 +218,13 @@ void triangleGenerator(int array[][COL], int apexx, int apexy, int level){
 	}
 }
 
-void gridDists(int array[][COL], int x, int y){
+void gridDists(int array[][COL], int startx, int starty, int endx, int endy){
 	int i, j;
 
 	for (i=0; i<ROW; i++){
 		for (j=0; j<COL; j++){
-			if(array[i][j] == SPC) array[i][j] = distanceFormula(x, y, j, i);
+			//if((j == startx && i == starty) || (i == endx && j == endy)) array[i][j] = 0; 
+			if(array[i][j] == SPC) array[i][j] = heuristicFxn(j, i, startx, starty, endx, endy);
 			else array[i][j] = -1;
 			printf("%d\t", array[i][j]);
 		}
@@ -309,14 +318,8 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 
 		dequeued = dequeue(&Q);
 
-
 		visitedArray[dequeued[1]][dequeued[0]] = 1;				
 		array[dequeued[1]][dequeued[0]] = DNE;	
-		// Sleep(SLP);
-		// system("cls");
-		// printGrid(array);
-		//printf("\n");
-		//printGrid(camefrom);
 
 		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);
 
@@ -371,8 +374,9 @@ void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, i
 
 	QueueNode * alpha;
 	QueueNode * current = Q->front;
-	float AlphaDistance, CurrentDistance;
+	int AlphaDistance, CurrentDistance;
 	char buffer;
+
 
 	alpha = (QueueNode *)malloc(sizeof(QueueNode));
 	if (alpha == NULL) queueOverflow();
@@ -382,16 +386,20 @@ void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, i
 		alpha->coord[1] = y;
 		alpha->next = NULL;
 
+		printf("ENTERED\n");
+		AlphaDistance = heuristicFxn(x, y, startptx, startpty, endptx, endpty);
+		//AlphaDistance = getCost(x, y, endptx, endpty, newCost);
+
 		if (Q->front == NULL){
 			Q->front = alpha;
 			Q->rear = alpha;
 		}
 
 		else {
-			AlphaDistance = heuristicDist(x, y, startptx, startpty, endptx, endpty);
-			CurrentDistance = heuristicDist(Q->front->coord[0], Q->front->coord[1], startptx, startpty, endptx, endpty);
+			CurrentDistance = heuristicFxn(Q->front->coord[0], Q->front->coord[1], startptx, startpty, endptx, endpty);
+
 			
-			if(AlphaDistance <= CurrentDistance){
+			if(AlphaDistance < CurrentDistance){
 				alpha->next = Q->front;
 				Q->front = alpha;
 				return;
@@ -399,13 +407,9 @@ void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, i
 
 			else{
 				while(current != Q->rear && current != NULL){
-					// printf("Looping\n");
-					CurrentDistance = heuristicDist(current->next->coord[0], current->next->coord[1], startptx, startpty, endptx, endpty);
-					//scanf("%c", &buffer);
-
-					if(AlphaDistance <= CurrentDistance){
-						// printf("ENTERED\n");
-						// scanf("%c", &buffer);
+					CurrentDistance = heuristicFxn(current->next->coord[0], current->next->coord[1], startptx, startpty, endptx, endpty);
+					
+					if(AlphaDistance < CurrentDistance){
 						alpha->next = current->next;
 						current->next = alpha;
 						return;						
@@ -414,9 +418,6 @@ void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, i
 					current = current->next;
 				}
 				
-				// printf("%.0f %.0f\n", CurrentDistance, AlphaDistance);
-				// printf("REACHED\n");
-				// scanf("%c", &buffer);
 				Q->rear->next = alpha;
 				Q->rear = alpha;
 				return;
@@ -434,7 +435,10 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	int * dequeuedNeighbor;
 	int i, j, next;
 	int visitedArray[ROW][COL];
+	int cost[ROW][COL];
 	char c;
+
+	int newCost;
 	
 	Queue Q;
 	initQueue(&Q);
@@ -442,6 +446,11 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	Queue nb;
 	Queue pathtrace;
 	initQueue(&pathtrace);
+
+	copyGrid(array, cost);
+	gridDists(cost, start[0], start[1], end[0], end[1]);
+	printGrid(cost);
+	scanf("%c", &c);
 
 	if (!isPassable(array, start[0], start[1])) return;	
 
@@ -488,10 +497,26 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 
 		while (!isEmptyQueue(&nb)){														//Now that we have the sorted nb, dequeue them then visit!
 			dequeuedNeighbor = dequeue(&nb);
+			//newCost = cost[dequeued[1]][dequeued[0]] + 1;
+			// newCost = heuristicDist(dequeuedNeighbor[1], dequeuedNeighbor[0], start[0], start[1]);
+			// printf("%d\n", newCost);
+			// scanf("%c", &c);
+			
+
+			// if(cost[dequeuedNeighbor[1]][dequeuedNeighbor[0]] == -1 || newCost < cost[dequeuedNeighbor[1]][dequeuedNeighbor[0]]){
+			// 	cost[dequeuedNeighbor[1]][dequeuedNeighbor[0]] = newCost;
+			// 	enqueue2(&Q, dequeuedNeighbor[0], dequeuedNeighbor[1], end[0], end[1], newCost);
+			// 	traverseQueue(&Q, end[0], end[1], newCost);
+			// }
+
+			// if(cost[dequeuedNeighbor[1]][dequeuedNeighbor[0]] == -1 || newCost < cost[dequeuedNeighbor[1]][dequeuedNeighbor[0]]){
+			// 	cost[dequeuedNeighbor[1]][dequeuedNeighbor[0]] = newCost;
+			// 	enqueue2(&Q, dequeuedNeighbor[0], dequeuedNeighbor[1], end[0], end[1], newCost);
+			// }
+
 			if (visitedArray[dequeuedNeighbor[1]][dequeuedNeighbor[0]] == 0){			//Visit nodes if they haven't been visited though. Otherwise, skip
-				// printf("FOUND: (%d, %d)\n", dequeuedNeighbor[0], dequeuedNeighbor[1]);
 				enqueue2(&Q, dequeuedNeighbor[0], dequeuedNeighbor[1], start[0], start[1], end[0], end[1]);	
-				// traverseQueue(&Q, end[0], end[1]);			
+				//traverseQueue(&Q, start[0], start[1], end[0], end[1]);
 			}
 		}
 
@@ -744,15 +769,20 @@ int main(){
 	//copyGrid(mazeBackup, maze);
 	//printGrid(maze);
 	//BFS(maze, gridBFS, startpt, endpt);
-	//gridDists(grid2, endpt[0], endpt[1]);
-	//scanf("%c", &c);
 	cleanGrid(grid);
 	cleanGrid(gridBFS);
 	cleanGrid(gridDFS);
 
+	// quadrilateralGenerator(grid, 1, 17, 17, 17);
+	// quadrilateralGenerator(grid, 17, 3, 17, 17);
+	// quadrilateralGenerator(grid, 17, 3, 17, 17);
+	// gridDists(grid, startpt[0], startpt[1], endpt[0], endpt[1]);
+	// //printGrid(grid);
+	// scanf("%c", &c);
+	cleanGrid(grid);
 	quadrilateralGenerator(grid, 1, 17, 17, 17);
 	quadrilateralGenerator(grid, 17, 3, 17, 17);
-	quadrilateralGenerator(grid, 17, 3, 17, 17);
+	quadrilateralGenerator(grid, 1, 3, 17, 3);
 	AStar(grid, gridBFS, startpt, endpt);
 
 	
