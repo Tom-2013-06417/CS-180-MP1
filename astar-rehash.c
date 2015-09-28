@@ -4,7 +4,7 @@
 #include <time.h>
 
 #define ROW 21
-#define COL 51
+#define COL 21
 #define OBS 254
 #define SPC 32
 #define DNE 35
@@ -39,11 +39,12 @@ typedef struct queue{
 } Queue;
 
 float distanceFormula(int x1, int y1, int x2, int y2){
-	return sqrt(pow((float)x2-(float)x1, 2)+pow((float)y2-(float)y1, 2));
+	return abs(x1 - x2) + abs(y1 - y2);
 }
 
 float heuristicDist(int x, int y, int startptx, int startpty, int endptx, int endpty){
-	return distanceFormula(x, y, endptx, endpty) + distanceFormula(x, y, startptx, startpty);
+	return distanceFormula(x, y, endptx, endpty);
+	//return distanceFormula(x, y, endptx, endpty) + distanceFormula(x, y, startptx, startpty);
 }
 
 void initQueue(Queue * Q){
@@ -139,12 +140,12 @@ void traverseQueue(Queue * Q, float endptx, float endpty){
 
 	curr = Q->front;
 
-	printf("\n\nSTART -> ");
+	printf("\n\nSTART\n");
 
 	while (curr != NULL){
 		printf("(%d,", curr->coord[0]);
 		printf("%d)  ", curr->coord[1]);
-		printf("[%f] ", distanceFormula(endptx, endpty, curr->coord[0], curr->coord[1]));
+		printf("[%.0f]\n", distanceFormula(endptx, endpty, curr->coord[0], curr->coord[1]));
 		curr = curr->next;
 	}
 	printf("NULL\n");
@@ -209,13 +210,14 @@ void triangleGenerator(int array[][COL], int apexx, int apexy, int level){
 	}
 }
 
-void gridDists(float array[][COL], int x, int y){
+void gridDists(int array[][COL], int x, int y){
 	int i, j;
 
 	for (i=0; i<ROW; i++){
 		for (j=0; j<COL; j++){
-			array[i][j] = distanceFormula(x, y, j, i);
-			printf("%.2f ", array[i][j]);
+			if(array[i][j] == SPC) array[i][j] = distanceFormula(x, y, j, i);
+			else array[i][j] = -1;
+			printf("%d\t", array[i][j]);
 		}
 		printf("\n");
 	}
@@ -366,6 +368,26 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 }
 
 void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, int endpty){
+	// QueueNode * alpha;
+	// alpha = (QueueNode *)malloc(sizeof(QueueNode));
+	// if (alpha == NULL) queueOverflow();
+	// else {
+	// 	alpha->coord = (int *)malloc(2*sizeof(int));
+	// 	alpha->coord[0] = x;
+	// 	alpha->coord[1] = y;
+	// 	alpha->next = NULL;
+
+	// 	if (Q->front == NULL){
+	// 		Q->front = alpha;
+	// 		Q->rear = alpha;
+	// 	}
+
+	// 	else {
+	// 		Q->rear->next = alpha;
+	// 		Q->rear = alpha;
+	// 	}
+	// }
+
 	QueueNode * alpha;
 	QueueNode * current = Q->front;
 	float AlphaDistance, CurrentDistance;
@@ -387,6 +409,7 @@ void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, i
 		else {
 			AlphaDistance = heuristicDist(x, y, startptx, startpty, endptx, endpty);
 			CurrentDistance = heuristicDist(Q->front->coord[0], Q->front->coord[1], startptx, startpty, endptx, endpty);
+			
 			if(AlphaDistance <= CurrentDistance){
 				alpha->next = Q->front;
 				Q->front = alpha;
@@ -394,11 +417,14 @@ void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, i
 			}
 
 			else{
-				while(current != Q->rear && current == NULL){
-					printf("Looping\n");
-					CurrentDistance = distanceFormula(current->next->coord[0], current->next->coord[1], endptx, endpty);
-					
+				while(current != Q->rear && current != NULL){
+					// printf("Looping\n");
+					CurrentDistance = heuristicDist(current->next->coord[0], current->next->coord[1], startptx, startpty, endptx, endpty);
+					//scanf("%c", &buffer);
+
 					if(AlphaDistance <= CurrentDistance){
+						// printf("ENTERED\n");
+						// scanf("%c", &buffer);
 						alpha->next = current->next;
 						current->next = alpha;
 						return;						
@@ -406,7 +432,10 @@ void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, i
 
 					current = current->next;
 				}
-		
+				
+				// printf("%.0f %.0f\n", CurrentDistance, AlphaDistance);
+				// printf("REACHED\n");
+				// scanf("%c", &buffer);
 				Q->rear->next = alpha;
 				Q->rear = alpha;
 				return;
@@ -479,10 +508,10 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	while (!isEmptyQueue(&Q)){															//While the queue is not empty
 
 		
-		//traverseQueue(&Q, end[0], end[1]);
+		// traverseQueue(&Q, end[0], end[1]);
 		dequeued = dequeue(&Q);
-		//printf("DEQUEUED: (%d, %d)\n", dequeued[0], dequeued[1]);
-		//scanf("%c", &c);
+		// printf("DEQUEUED: (%d, %d)\n", dequeued[0], dequeued[1]);
+		// scanf("%c", &c);
 		
 
 		visitedArray[dequeued[1]][dequeued[0]] = 1;				
@@ -506,26 +535,32 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		while (!isEmptyQueue(&nb)){														//Now that we have the sorted nb, dequeue them then visit!
 			dequeuedNeighbor = dequeue(&nb);
 			if (visitedArray[dequeuedNeighbor[1]][dequeuedNeighbor[0]] == 0){			//Visit nodes if they haven't been visited though. Otherwise, skip
-				enqueue2(&Q, dequeuedNeighbor[0], dequeuedNeighbor[1], start[0], start[1], end[0], end[1]);				
+				// printf("FOUND: (%d, %d)\n", dequeuedNeighbor[0], dequeuedNeighbor[1]);
+				enqueue2(&Q, dequeuedNeighbor[0], dequeuedNeighbor[1], start[0], start[1], end[0], end[1]);	
+				// traverseQueue(&Q, end[0], end[1]);			
 			}
 		}
+
+		// printf("POPPING NEW NODE\n");
 	}
 
 	enqueue2(&pathtrace, end[0], end[1], start[0], start[1], end[0], end[1]);
 	
-	while (!(pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1]) && !isEmptyQueue(&Q)){
+	while (!(pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1])){
 		switch(camefrom[pathtrace.rear->coord[1]][pathtrace.rear->coord[0]]){
 			case NTH:
-				enqueue2(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]+1, start[0], start[1], end[0], end[1]);				
+				enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]+1);				
 				break;
 			case WST:
-				enqueue2(&pathtrace, pathtrace.rear->coord[0]+1, pathtrace.rear->coord[1], start[0], start[1], end[0], end[1]);				
+				enqueue(&pathtrace, pathtrace.rear->coord[0]+1, pathtrace.rear->coord[1]);				
 				break;
 			case STH:
-				enqueue2(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]-1, start[0], start[1], end[0], end[1]);
+				enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]-1);
 				break;
 			case EST:
-				enqueue2(&pathtrace, pathtrace.rear->coord[0]-1, pathtrace.rear->coord[1], start[0], start[1], end[0], end[1]);
+				enqueue(&pathtrace, pathtrace.rear->coord[0]-1, pathtrace.rear->coord[1]);
+				break;
+			default:
 				break;
 		}
 	}
@@ -689,8 +724,9 @@ int main(){
 	srand((unsigned)time(NULL));
 
 	int grid[ROW][COL];
-	int startpt[2] = {11, 11};
-	int endpt[2] = {49, 9};
+	int grid2[ROW][COL];
+	int startpt[2] = {0, 17};
+	int endpt[2] = {20, 9};
 
 	int gridBFS[ROW][COL];
 	int gridDFS[ROW][COL];
@@ -702,20 +738,16 @@ int main(){
 	int backtrack_x[(ROW-1)*(COL-1)];
 	int backtrack_y[(ROW-1)*(COL-1)];
 
+	char c;
+
 	
 	Queue Q;
 	initQueue(&Q);
-
 	init_maze(maze);
 
-	cleanGrid(grid);
-	cleanGrid(gridBFS);
-	cleanGrid(gridDFS);
-
-
-
-	quadrilateralGenerator(grid, 10, 4, 28, 7);
-	quadrilateralGenerator(grid, 27, 4, 30, 14);
+	//gridDists()
+	// quadrilateralGenerator(grid, 10, 4, 28, 7);
+	// quadrilateralGenerator(grid, 27, 4, 30, 14);
 	//triangleGenerator(grid, 16, 10, 7);
 	//printGrid(grid);
 
@@ -758,7 +790,15 @@ int main(){
 	//copyGrid(mazeBackup, maze);
 	//printGrid(maze);
 	//BFS(maze, gridBFS, startpt, endpt);
-	//gridDists(grid, endpt[0], endpt[1]);
+	//gridDists(grid2, endpt[0], endpt[1]);
+	//scanf("%c", &c);
+	cleanGrid(grid);
+	cleanGrid(gridBFS);
+	cleanGrid(gridDFS);
+
+	quadrilateralGenerator(grid, 1, 17, 17, 17);
+	quadrilateralGenerator(grid, 17, 3, 17, 17);
+	quadrilateralGenerator(grid, 17, 3, 17, 17);
 	AStar(grid, gridBFS, startpt, endpt);
 
 	
