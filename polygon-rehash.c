@@ -2,7 +2,7 @@
 #include <math.h>
 #include <windows.h>
 
-#define ROW 15
+#define ROW 20
 #define COL 30
 #define OBS 254
 #define EDG 35
@@ -68,36 +68,6 @@ void printGrid(int array[][COL]){
 
 }
 
-int PIPVerifier(int array[][COL], int x, int y){
-
-	int i, j, c = 0, d = 0;
-	if (array[y][x] == EDG || array[y][x] == VTX) return c;
-
-	for (i = 0; i < x; i++) {
-		if (array[y][i] == EDG) {
-			c = !c;
-			while (array[y][i] == EDG && i < x){
-				i++;
-			}
-			i--;
-		}
-	}
-
-	for (i = COL - 1; i > x; i--) {
-		if (array[y][i] == EDG) {
-			d = !d;
-			while (array[y][i] == EDG && i > x){
-				i--;
-			}
-			i++;
-		}
-	}
-
-	if (c == d) return c;
-	else return 0;
-
-}
-
 void plot(int array[][COL], int x, int y, int mode){
 
 	if (mode == 1) array[y][x] = OBS;
@@ -125,24 +95,9 @@ void plotVertices(int array[][COL], float XCoord[], float YCoord[], int n){
 void convertVertices(int array[][COL]){
 
 	int i, j;
-	for (i=0; i<ROW; i++){
-		for (j=0; j<COL; j++){
+	for (i=0; i<COL; i++){
+		for (j=0; j<ROW; j++){
 			if (array[j][i] == EDG) plot(array, i, j, 1);
-		}
-	}
-
-}
-
-void fillPolygon(int array[][COL], float XCoord[], float YCoord[], int n){
-
-	int i, j;
-
-	for (i=0; i<ROW; i++){
-		for (j=0; j<COL; j++){
-			//if (PIPVerifier(array, XCoord, YCoord, j, i, n) == 1){
-			if (PIPVerifier(array, j, i) == 1){
-				plot(array, j, i, 1);
-			}
 		}
 	}
 
@@ -194,90 +149,49 @@ void generateDiagonalEdge(int array[][COL], float x1, float y1, float x2, float 
 
 	float m = (y2 - y1)/(x2 - x1);
 
-	if (y1 < y2){
-		printf("ENTERED\n");
-		pressEnter();
-		for(i=y1+1; i<y2; i++){
-			yPos = abs(i);
-			xPos = abs((m * (i - y2)) + (x2));
-			plot(array, xPos, yPos, 3);
-		}
-	}
-
-	else {
-		printf("ENTERED CASE 2\n");
-		printf("%f %f\n", y1, y2);
-		pressEnter();
-		for(i=x2+1; i < y1; i++){
-			xPos = abs(i);
-			yPos = abs((m * (i- x1)) + (y1 ));
-			printf("%d %d\n", xPos, yPos);
-			printf("YIYIY\n");
-			plot(array, xPos, yPos, 3);
-			pressEnter();
-		}
-	}
-
-
-
-	/*
-	if (x1 > x2) horStep = -1;
-	else horStep = 1;
-
-	if (y1 > y2) verStep = -1;
-	else verStep = 1;
-
-	if (dx >= dy){
-
-		subedge = dx/dy;
-		distribute = dx%dy;
-		
-		while(verSum < dy){
-			i = 0;
-			while (i < subedge){
+	if (dy >= dx){
+		if (y1 > y2){
+			for(i=y2+1; i<y1; i++){
+				xPos = ((i - y1)/m) + (x1);
+				yPos = i;
 				plot(array, xPos, yPos, 3);
-				xPos = xPos + horStep;
-				i++;
+				printf("MORE Y (%d > %d): %.0f > %.0f\n", dy, dx, y1, y2);
+				pressEnter();
 			}
-			yPos = yPos + verStep;
-			verSum = verSum + 1;
 		}
 
-		while(xPos != x2){
-			plot(array, xPos, yPos, 3);
-			xPos = xPos + horStep;
+		else {
+			for(i=y1+1; i < y2; i++){
+				xPos = ((i- y2)/m) + (x2);
+				yPos = i;
+				plot(array, xPos, yPos, 3);
+				printf("MORE Y (%d > %d): %.0f <= %.0f\n", dy, dx, y1, y2);
+				pressEnter();
+			}
 		}
-
-		return;
-
 	}
 
-
-	if (dx < dy){
-
-		subedge = dy/dx;
-		
-		while(horSum < dx){
-			i = 0;
-			while (i < subedge){
+	else{
+		if (x1 < x2){
+			for(i=x1+1; i<x2; i++){
+				xPos = abs(i);
+				yPos = abs((m * (i - x2)) + (y2));
 				plot(array, xPos, yPos, 3);
-				yPos = yPos + verStep;
-				i++;
+				printf("MORE X (%d > %d): %.0f < %.0f\n", dx, dy, x1, x2);
+				pressEnter();
 			}
-			xPos = xPos + horStep;
-			horSum = horSum + 1;
 		}
 
-		printf("%d %d\n", xPos, yPos);
-		printf("%.0f %.0f\n", x2, y2);
-		while(yPos != y2){
-			plot(array, xPos, yPos, 3);
-			yPos = yPos + verStep;
-		}
-
-		return;
-
-	}*/
+		else {
+			for(i=x2+1; i < x1; i++){
+				xPos = abs(i);
+				yPos = abs((m * (i - x2)) + (y2));
+				plot(array, xPos, yPos, 3);
+				printf("MORE X (%d > %d): %.0f >= %.0f\n", dx, dy, x1, x2);
+				pressEnter();
+			}
+		}	
+	}
 
 }
 
@@ -293,7 +207,7 @@ void generateEdge(int array[][COL], float x1, float y1, float x2, float y2){
 	if(x1 == x2 || y1 == y2) generateStraightEdge(array, x1, y1, x2, y2);
 	else generateDiagonalEdge(array, x1, y1, x2, y2);
 
-	printf("GENERATED ONE EDGE\n");
+	printf("GENERATED EDGE BETWEEN (%.0f, %.0f) & (%.0f, %.0f) \n", x1, y1, x2, y2);
 	pressEnter();
 }
 
