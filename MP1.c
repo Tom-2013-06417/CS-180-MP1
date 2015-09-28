@@ -3,8 +3,8 @@
 #include <windows.h>
 #include <time.h>
 
-#define ROW 41
-#define COL 41
+#define ROW 201
+#define COL 401
 #define OBS 250
 #define SPC 32
 #define DNE 35
@@ -670,7 +670,7 @@ int main(){
 
 	init_maze(grid);
  
-	maze_generator(indeks, grid, backtrack_x, backtrack_y, 199, 99, 1);
+	maze_generator(indeks, grid, backtrack_x, backtrack_y, 1, 1, 1);
 
 	printGrid(grid);
 	printf("\n");
