@@ -368,25 +368,6 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 }
 
 void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, int endpty){
-	// QueueNode * alpha;
-	// alpha = (QueueNode *)malloc(sizeof(QueueNode));
-	// if (alpha == NULL) queueOverflow();
-	// else {
-	// 	alpha->coord = (int *)malloc(2*sizeof(int));
-	// 	alpha->coord[0] = x;
-	// 	alpha->coord[1] = y;
-	// 	alpha->next = NULL;
-
-	// 	if (Q->front == NULL){
-	// 		Q->front = alpha;
-	// 		Q->rear = alpha;
-	// 	}
-
-	// 	else {
-	// 		Q->rear->next = alpha;
-	// 		Q->rear = alpha;
-	// 	}
-	// }
 
 	QueueNode * alpha;
 	QueueNode * current = Q->front;
@@ -447,33 +428,6 @@ void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, i
 	}
 }
 
-
-Queue Neighbors_AStar(int array[][COL], int camefrom[][COL], int x, int y, int startptx, int startpty, int endx, int endy){
-	Queue Neighbor;
-	initQueue(&Neighbor);
-
-	if (isInsideGrid(array, x, y-1) && isPassable(array, x, y-1) && camefrom[y-1][x] == SPC){
-		enqueue2(&Neighbor, x, y-1, startptx, startpty, endx, endy);
-		camefrom[y-1][x] = NTH;
-	}
-	if (isInsideGrid(array, x-1, y) && isPassable(array, x-1, y) && camefrom[y][x-1] == SPC){
-		enqueue2(&Neighbor, x-1, y, startptx, startpty, endx, endy);
-		camefrom[y][x-1] = WST;
-	}
-	if (isInsideGrid(array, x, y+1) && isPassable(array, x, y+1) && camefrom[y+1][x] == SPC){
-		enqueue2(&Neighbor, x, y+1, startptx, startpty, endx, endy);
-		camefrom[y+1][x] = STH;
-	}
-	if (isInsideGrid(array, x+1, y) && isPassable(array, x+1, y) && camefrom[y][x+1] == SPC){
-		enqueue2(&Neighbor, x+1, y, startptx, startpty, endx, endy);
-		camefrom[y][x+1] = EST;
-	}
-
-	if ((x+y) % 2 == 1) reverseQueue(&Neighbor);
-
-	return Neighbor;
-}
-
 void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 	
 	int * dequeued;																		//Initialize all the variables
@@ -522,7 +476,7 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		printf("\n");
 		printGrid(camefrom);
 
-		nb = Neighbors_AStar(array, camefrom, dequeued[0], dequeued[1], start[0], start[1], end[0], end[1]);
+		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);
 
 		if (dequeued[0] == end[0] && dequeued[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
 			array[start[1]][start[0]] = STR;											//Mark the start coordinate
@@ -544,7 +498,7 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		// printf("POPPING NEW NODE\n");
 	}
 
-	enqueue2(&pathtrace, end[0], end[1], start[0], start[1], end[0], end[1]);
+	enqueue(&pathtrace, end[0], end[1]);
 	
 	while (!(pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1])){
 		switch(camefrom[pathtrace.rear->coord[1]][pathtrace.rear->coord[0]]){
