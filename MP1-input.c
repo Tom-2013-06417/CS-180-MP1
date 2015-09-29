@@ -8,6 +8,8 @@
 #define OBS 250
 #define SPC 32
 #define DNE 35
+#define EDG 36
+#define VTX 33
 #define STR 65
 #define GOL 90
 #define SLP 10
@@ -23,6 +25,315 @@
 #define WST 26
 #define STH 24
 #define EST 27
+
+
+//Polygon Generation
+typedef struct PolyNode
+{
+
+    struct PolyNode * next;
+    int numVertex;
+    float * XCoord;
+    float * YCoord;
+
+} PolyNode;
+
+
+void pressEnter(){
+
+	char c;
+	scanf("%c", &c);
+
+}
+
+
+void cleanGrid(int array[][COL]){
+
+	int i, j;
+
+	for (i=0; i<ROW; i++){
+		for (j=0; j<COL; j++){
+			array[i][j] = SPC;
+		}
+	}
+
+}
+
+void printGrid(int array[][COL]){
+
+	int i, j;
+
+	for (i=0; i<ROW; i++){
+		for (j=0; j<COL; j++){
+			printf("%c ", array[i][j]);
+		}
+		printf("\n");
+	}
+
+}
+
+void plot(int array[][COL], int x, int y, int mode){
+
+	if (mode == 1) array[y][x] = OBS;
+	else if (array[y][x] != VTX && array[y][x] != EDG){ 
+		if (mode == 2) array[y][x] = EDG;
+		else array[y][x] = EDG;
+	}
+	//system("cls");
+	//printGrid(array);
+	//Sleep(SLP);
+
+}
+
+void plotVertices(int array[][COL], float XCoord[], float YCoord[], int n){
+
+	int i;
+
+	for (i=0; i<n; i++) {
+		plot(array, XCoord[i], YCoord[i], 2);
+		// printf("%.0f %.0f\n", XCoord[i], YCoord[i]);
+		// pressEnter();
+	}
+}
+
+void convertVertices(int array[][COL]){
+
+	int i, j;
+	for (i=0; i<COL; i++){
+		for (j=0; j<ROW; j++){
+			if (array[j][i] == EDG) plot(array, i, j, 1);
+		}
+	}
+
+}
+
+void generateStraightEdge(int array[][COL], float x1, float y1, float x2, float y2){
+
+	int i, start, end;
+
+	if (x1 == x2){
+		if (y1 < y2){
+			start = y1;
+			end = y2;
+		}
+
+		else {
+			start = y2;
+			end = y1;
+		}
+
+		for(i = start; i <= end; i++) plot(array, x1, i, 3);
+		return;
+	}
+
+	if (y1 == y2){
+		if (x1 < x2){
+			start = x1;
+			end = x2;
+		}
+		else {
+			start = x2;
+			end = x1;
+		}
+
+		for(i = start; i <= end; i++) plot(array, i, y1, 3);
+		return;
+	}
+
+}
+
+void generateDiagonalEdge(int array[][COL], float x1, float y1, float x2, float y2){
+
+	int i, j;
+	int dx = abs(x1 - x2), dy = abs(y1 - y2);
+	int xPos = x1, yPos = y1;
+	int subedge, horStep, verStep;
+	int horSum=0, verSum=0;
+	int distribute;
+
+	float m = (y2 - y1)/(x2 - x1);
+
+	if (dy >= dx){
+		if (y1 > y2){
+			for(i=y2+1; i<y1; i++){
+				xPos = ((i - y1)/m) + (x1);
+				yPos = i;
+				plot(array, xPos, yPos, 3);
+				// printf("MORE Y (%d > %d): %.0f > %.0f\n", dy, dx, y1, y2);
+				// pressEnter();
+			}
+		}
+
+		else {
+			for(i=y1+1; i < y2; i++){
+				xPos = ((i- y2)/m) + (x2);
+				yPos = i;
+				plot(array, xPos, yPos, 3);
+				// printf("MORE Y (%d > %d): %.0f <= %.0f\n", dy, dx, y1, y2);
+				// pressEnter();
+			}
+		}
+	}
+
+	else{
+		if (x1 < x2){
+			for(i=x1+1; i<x2; i++){
+				xPos = abs(i);
+				yPos = abs((m * (i - x2)) + (y2));
+				plot(array, xPos, yPos, 3);
+				// printf("MORE X (%d > %d): %.0f < %.0f\n", dx, dy, x1, x2);
+				// pressEnter();
+			}
+		}
+
+		else {
+			for(i=x2+1; i < x1; i++){
+				xPos = abs(i);
+				yPos = abs((m * (i - x2)) + (y2));
+				plot(array, xPos, yPos, 3);
+				// printf("MORE X (%d > %d): %.0f >= %.0f\n", dx, dy, x1, x2);
+				// pressEnter();
+			}
+		}	
+	}
+
+}
+
+void generateEdge(int array[][COL], float x1, float y1, float x2, float y2){
+
+	int i, j, start, end;
+	float dx = abs(x1 - x2), dy = abs(y1 - y2);
+	int xPos, yPos;
+	int subedge, horStep, verStep;
+	int horSum=0, verSum=0;
+	char x;
+
+	if(x1 == x2 || y1 == y2) generateStraightEdge(array, x1, y1, x2, y2);
+	else generateDiagonalEdge(array, x1, y1, x2, y2);
+
+	// printf("GENERATED EDGE BETWEEN (%.0f, %.0f) & (%.0f, %.0f) \n", x1, y1, x2, y2);
+	// pressEnter();
+}
+
+void generatePolygon(int array[][COL], float XCoord[], float YCoord[], int n){
+
+	plotVertices(array, XCoord, YCoord, n);
+	//pressEnter();
+	int i, j; 
+	for (i = 0; i < n; i++){
+		j = i + 1;
+
+		if (j < n) generateEdge(array, XCoord[i], YCoord[i], XCoord[j], YCoord[j]);
+		else generateEdge(array, XCoord[i], YCoord[i], XCoord[0], YCoord[0]);
+	}
+	//pressEnter();
+	//fillPolygon(array, XCoord, YCoord, n);
+	convertVertices(array);
+	//pressEnter();
+
+}
+
+void traversePolyNodes(int array[][COL], PolyNode * start){
+
+	PolyNode * current = start;
+	int i, j = 1;
+	char x;
+
+	while(current != NULL){
+		generatePolygon(array, current->XCoord, current->YCoord, current->numVertex);
+		current = current->next;
+	}
+	printGrid(array);
+
+}
+
+void createPolyNode(PolyNode ** start, PolyNode ** current, int n){
+
+	PolyNode * new = malloc(sizeof(PolyNode));
+
+	new->numVertex = n;
+	new->XCoord = malloc(n*sizeof(float));
+	new->YCoord = malloc(n*sizeof(float));
+	new->next = NULL;
+
+	if(*start == NULL){
+		*start = new;
+		*current = new;
+	}
+
+	else{
+		(*current)->next = new;
+		*current = (*current)->next;
+	}
+
+}
+
+void readPolygonData(PolyNode ** start, PolyNode ** current, int startpt[2], int endpt[2]){
+
+	char input[10];
+	char backup[10] = "input.txt";
+	int i, n, x, y;
+
+	printf("Input test case file: ");
+	gets(input);
+
+
+	FILE * fp = fopen(input, "r");
+	if (fp == NULL) {
+		printf("%s file not found; switching to default\n", input);
+		fp = fopen(backup, "r");
+		if (fp == NULL){
+			printf("input.txt file not found");
+			exit(1);
+		}
+	}
+
+	fseek(fp, 0, SEEK_END);
+	if ( ftell(fp) == 0 )
+	{
+		printf("Empty File\n");
+		fclose(fp);
+		exit(1);
+	}
+
+	fclose(fp);
+
+	fp = fopen(input, "r");
+	if (fp == NULL) {
+		fp = fopen(backup, "r");
+	}
+
+	fscanf(fp, "%d %d", &startpt[0], &startpt[1]);
+	fscanf(fp, "%d %d", &endpt[0], &endpt[1]);
+
+	while(!feof(fp)){
+		if (fscanf(fp, "%d", &n) == 1){
+			// printf("Number of  Vertices: %d\n", n);
+			createPolyNode(start, current, n);
+
+			i = 0;
+			// printf("X Coordinates ");
+			while (i < n){
+				fscanf(fp, "%d", &x);
+				(*current)->XCoord[i] = x;
+				i++;
+			}
+			// printf("\n");
+
+			i = 0;
+			// printf("Y Coordinates ");
+			while (i < n){
+				fscanf(fp, "%d", &y);
+				(*current)->YCoord[i] = y;	
+				i++;
+			}
+			// printf("\n\n");
+		}
+	}
+
+    fclose(fp);
+
+}
 
 
 //DATA STRUCTURES
@@ -231,27 +542,6 @@ void copyGrid(int array1[][COL], int array2[][COL]){
 	}
 }
 
-void cleanGrid(int array[][COL]){
-	int i, j;
-
-	for (i=0; i<ROW; i++){
-		for (j=0; j<COL; j++){
-			array[i][j] = SPC;
-		}
-	}
-}
-
-void printGrid(int array[][COL]){
-	int i, j;
-
-	for (i=0; i<ROW; i++){
-		for (j=0; j<COL; j++){
-			printf("%c ", array[i][j]);
-		}
-		printf("\n");
-	}
-}
-
 void quadrilateralGenerator(int array[][COL], int anchorx, int anchory, int endptx, int endpty){
 	int i, j;
 
@@ -334,6 +624,11 @@ Queue Neighbors(int array[][COL], int camefrom[][COL], int x, int y){
 }
 
 void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
+
+	clock_t beginProcess, endProcess;
+	double time_spent;
+
+	beginProcess = clock();
 	
 	int * dequeued;																		//Initialize all the variables
 	int * dequeuedNeighbor;
@@ -433,15 +728,24 @@ void BFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		dequeue(&Q);
 	}
 
-	printf("\nNumber of expanded nodes: %d\nCost of solution: %d\n", expandedNodes, costOfSolution);
+	endProcess = clock();
+	time_spent = (double)(endProcess - beginProcess) / CLOCKS_PER_SEC;
+	printf("\nNumber of expanded nodes: %d\nCost of solution: %d\nTime Spent: %lf\n", expandedNodes, costOfSolution, time_spent);
 }
 
-void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){	
+void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
+
+	clock_t beginProcess, endProcess;
+	double time_spent;
+
+	beginProcess = clock();	
 
 	Stack S;
 	initStack(&S);
 
 	int found=0, expandedNodes=0, costOfSolution=0;
+
+	if (!isPassable(array, start[0], start[1])) return;	
 
 	array[end[1]][end[0]] = GOL;
 
@@ -529,7 +833,9 @@ void DFS(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		pop(&S);
 	}
 
-	printf("\nNumber of expanded nodes: %d\nCost of solution: %d\n", expandedNodes, costOfSolution);
+	endProcess = clock();
+	time_spent = (double)(endProcess - beginProcess) / CLOCKS_PER_SEC;
+	printf("\nNumber of expanded nodes: %d\nCost of solution: %d\nTime Spent: %lf\n", expandedNodes, costOfSolution, time_spent);
 
 }
 
@@ -639,6 +945,187 @@ void maze_generator(int indeks, int maze[][COL], int backtrack_x[(ROW-1)*(COL-1)
 
 //END MAZE GENERATOR CODE
 
+//A*
+
+//manhattan distance
+int heuristicFxn(int x, int y, int startx, int starty, int endptx, int endpty){
+	return abs(endptx - x) + abs(endpty - y) + abs(startx - x) + abs(starty - y);
+}
+
+//modified enqueue for priority queue for A* search
+void enqueue2(Queue * Q, int x, int y, int startptx, int startpty, int endptx, int endpty){
+
+	QueueNode * alpha;
+	QueueNode * current = Q->front;
+	int AlphaDistance, CurrentDistance;
+	char buffer;
+
+
+	alpha = (QueueNode *)malloc(sizeof(QueueNode));
+	if (alpha == NULL) queueOverflow();
+	else {
+		alpha->coord = (int *)malloc(2*sizeof(int));
+		alpha->coord[0] = x;
+		alpha->coord[1] = y;
+		alpha->next = NULL;
+
+		AlphaDistance = heuristicFxn(x, y, startptx, startpty, endptx, endpty);
+
+		if (Q->front == NULL){
+			Q->front = alpha;
+			Q->rear = alpha;
+		}
+
+		else {
+			CurrentDistance = heuristicFxn(Q->front->coord[0], Q->front->coord[1], startptx, startpty, endptx, endpty);
+
+			
+			if(AlphaDistance < CurrentDistance){
+				alpha->next = Q->front;
+				Q->front = alpha;
+				return;
+			}
+
+			else{
+				while(current != Q->rear && current != NULL){
+					CurrentDistance = heuristicFxn(current->next->coord[0], current->next->coord[1], startptx, startpty, endptx, endpty);
+					
+					if(AlphaDistance < CurrentDistance){
+						alpha->next = current->next;
+						current->next = alpha;
+						return;						
+					}
+
+					current = current->next;
+				}
+				
+				Q->rear->next = alpha;
+				Q->rear = alpha;
+				return;
+			}
+
+			
+
+		}
+	}
+}
+
+//modified BFS search for A* search
+void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
+
+	clock_t beginProcess, endProcess;
+	double time_spent;
+
+	beginProcess = clock();
+	
+	int * dequeued;																		//Initialize all the variables
+	int * dequeuedNeighbor;
+	int i, j, next;
+	int found=0, expandedNodes=0, costOfSolution=0;
+	int newCost;
+	
+	Queue Q;
+	initQueue(&Q);
+
+	Queue nb;
+	Queue pathtrace;
+	initQueue(&pathtrace);
+	
+	int ** visitedArray = (int **)malloc(ROW * sizeof(int *));
+	for (i=0; i<ROW; i++)
+		visitedArray[i] = (int *)malloc(COL * sizeof(int));
+
+
+	if (!isPassable(array, start[0], start[1])) return;	
+
+	for (i = 0; i < ROW; i++){															//Initialize the array of visitors to 0
+		for (j = 0; j < COL; j++){
+			visitedArray[i][j] = 0;
+		}
+	}
+
+	array[start[1]][start[0]] = STR;													//Mark the start coordinate
+	array[end[1]][end[0]] = GOL;														//Mark the end coordinate
+	camefrom[start[1]][start[0]] = STR;													//Mark the start coordinate
+	
+
+	enqueue2(&Q, start[0], start[1], start[0], start[1], end[0], end[1]);													//Queue in the starting point
+	visitedArray[start[1]][start[0]] = 1;												//Mark it as visited
+	
+	while (!isEmptyQueue(&Q)){															//While the queue is not empty
+
+		expandedNodes++;
+
+		dequeued = dequeue(&Q);
+
+
+		if (dequeued[0] == end[0] && dequeued[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
+			array[start[1]][start[0]] = STR;											//Mark the start coordinate
+			array[end[1]][end[0]] = GOL;												//Mark the end coordinate	
+			found = 1;
+			break;
+		}		
+		
+		visitedArray[dequeued[1]][dequeued[0]] = 1;				
+		array[dequeued[1]][dequeued[0]] = DNE;
+		
+		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);
+		//Expand the neighbors by selecting the closest one. Queue Neighbors first into Neighbor Queue (becomes sorted). Dequeue them to the main Queue one by one so that their neigbhors will be enqueued in the future:
+
+		while (!isEmptyQueue(&nb)){														//Now that we have the sorted nb, dequeue them then visit!
+			dequeuedNeighbor = dequeue(&nb);
+
+			if (visitedArray[dequeuedNeighbor[1]][dequeuedNeighbor[0]] == 0){			//Visit nodes if they haven't been visited though. Otherwise, skip
+				enqueue2(&Q, dequeuedNeighbor[0], dequeuedNeighbor[1], start[0], start[1], end[0], end[1]);	
+				
+			}
+		}
+	}
+
+	if (found == 1){
+
+		enqueue(&pathtrace, end[0], end[1]);
+		costOfSolution++;
+		
+		while (!(pathtrace.rear->coord[0] == start[0] && pathtrace.rear->coord[1] == start[1])){
+			switch(camefrom[pathtrace.rear->coord[1]][pathtrace.rear->coord[0]]){
+				case NTH:
+					enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]+1);				
+					break;
+				case WST:
+					enqueue(&pathtrace, pathtrace.rear->coord[0]+1, pathtrace.rear->coord[1]);				
+					break;
+				case STH:
+					enqueue(&pathtrace, pathtrace.rear->coord[0], pathtrace.rear->coord[1]-1);
+					break;
+				case EST:
+					enqueue(&pathtrace, pathtrace.rear->coord[0]-1, pathtrace.rear->coord[1]);
+					break;
+				default:
+					break;
+			}
+			costOfSolution++;
+		}
+
+		reverseQueue(&pathtrace);
+		printPath(camefrom, &pathtrace);
+	}
+
+	else printf("\nNo path found.\n");
+	
+	for (i=0; i<ROW; i++)
+         free(visitedArray[i]);
+	free(visitedArray);
+
+	while (!isEmptyQueue(&Q)){
+		dequeue(&Q);
+	}
+
+	endProcess = clock();
+	time_spent = (double)(endProcess - beginProcess) / CLOCKS_PER_SEC;
+	printf("\nNumber of expanded nodes: %d\nCost of solution: %d\nTime Spent: %lf\n", expandedNodes, costOfSolution, time_spent);
+}
+
 
 int main(){
 
@@ -646,10 +1133,13 @@ int main(){
 
 	srand((unsigned)time(NULL));
 
-	int startpt[2] = {1, 1};
-	int endpt[2] = {21, 21};
-
 	int grid[ROW][COL];
+
+
+	int choice;
+
+	int startpt[2], endpt[2];
+
 	int gridPaths[ROW][COL];
 
 	int indeks = 0;
@@ -668,15 +1158,30 @@ int main(){
 	backtrack_x[indeks] = 1;
 	backtrack_y[indeks] = 1;
 
-	init_maze(grid);
- 
-	maze_generator(indeks, grid, backtrack_x, backtrack_y, 1, 1, 1);
+	PolyNode * start;
+	PolyNode * current;
+	start = NULL;
+	current = NULL;
+	
+	cleanGrid(grid);
+	readPolygonData(&start, &current, startpt, endpt);
+	traversePolyNodes(grid, start);	
+	
 
-	printGrid(grid);
-	printf("\n");
+	// init_maze(grid);
+	// maze_generator(indeks, grid, backtrack_x, backtrack_y, 1, 1, 1);
+	// printGrid(grid);
+	// printf("\n");
 	
 	copyGrid(grid, gridBackup);
 	BFS(grid, gridPaths, startpt, endpt);
+	printGrid(gridPaths);
+	
+	printf("\n");
+
+	cleanGrid(gridPaths);
+	copyGrid(gridBackup, grid);
+	AStar(grid, gridPaths, startpt, endpt);
 	printGrid(gridPaths);
 	
 	printf("\n");
@@ -685,6 +1190,7 @@ int main(){
 	copyGrid(gridBackup, grid);
 	DFS(grid, gridPaths, startpt, endpt);
 	printGrid(gridPaths);
+
 	printf("\n");
 
 	return 0;
