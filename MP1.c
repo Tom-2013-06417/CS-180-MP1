@@ -38,11 +38,6 @@ typedef struct PolyNode
 
 } PolyNode;
 
-void flag(){
-
-	printf("\nPUTANGINAAAAAAA\n");
-
-}
 
 void pressEnter(){
 
@@ -1050,11 +1045,7 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 		expandedNodes++;
 
 		dequeued = dequeue(&Q);
-		
-		visitedArray[dequeued[1]][dequeued[0]] = 1;				
-		array[dequeued[1]][dequeued[0]] = DNE;	
 
-		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);
 
 		if (dequeued[0] == end[0] && dequeued[1] == end[1]){							//If a newly visited node is the goal, break from the loop twice!!!
 			array[start[1]][start[0]] = STR;											//Mark the start coordinate
@@ -1063,6 +1054,10 @@ void AStar(int array[][COL], int camefrom[][COL], int start[], int end[]){
 			break;
 		}		
 		
+		visitedArray[dequeued[1]][dequeued[0]] = 1;				
+		array[dequeued[1]][dequeued[0]] = DNE;
+		
+		nb = Neighbors(array, camefrom, dequeued[0], dequeued[1]);
 		//Expand the neighbors by selecting the closest one. Queue Neighbors first into Neighbor Queue (becomes sorted). Dequeue them to the main Queue one by one so that their neigbhors will be enqueued in the future:
 
 		while (!isEmptyQueue(&nb)){														//Now that we have the sorted nb, dequeue them then visit!
@@ -1172,19 +1167,19 @@ int main(){
 	printGrid(gridPaths);
 	
 	printf("\n");
+
+	cleanGrid(gridPaths);
+	copyGrid(gridBackup, grid);
+	AStar(grid, gridPaths, startpt, endpt);
+	printGrid(gridPaths);
+	
+	printf("\n");
 	
 	cleanGrid(gridPaths);
 	copyGrid(gridBackup, grid);
 	DFS(grid, gridPaths, startpt, endpt);
 	printGrid(gridPaths);
 
-	printf("\n");
-
-	cleanGrid(gridPaths);
-	//copyGrid(gridBackup, grid);
-	AStar(grid, gridPaths, startpt, endpt);
-	printGrid(gridPaths);
-	
 	printf("\n");
 
 	return 0;
