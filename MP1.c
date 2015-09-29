@@ -270,12 +270,22 @@ void createPolyNode(PolyNode ** start, PolyNode ** current, int n){
 
 void readPolygonData(PolyNode ** start, PolyNode ** current, int startpt[2], int endpt[2]){
 
-	FILE * fp = fopen("input.txt", "r");
+	char input[10];
+	char backup[10] = "input.txt";
 	int i, n, x, y;
 
+	printf("Input test case file: ");
+	gets(input);
+
+
+	FILE * fp = fopen(input, "r");
 	if (fp == NULL) {
-		printf("Input File Not Found\n");
-		exit(1);
+		printf("%s file not found; switching to default\n", input);
+		fp = fopen(backup, "r");
+		if (fp == NULL){
+			printf("input.txt file not found");
+			exit(1);
+		}
 	}
 
 	fseek(fp, 0, SEEK_END);
@@ -288,8 +298,10 @@ void readPolygonData(PolyNode ** start, PolyNode ** current, int startpt[2], int
 
 	fclose(fp);
 
-
-	fp = fopen("input.txt", "r");
+	fp = fopen(input, "r");
+	if (fp == NULL) {
+		fp = fopen(backup, "r");
+	}
 
 	fscanf(fp, "%d %d", &startpt[0], &startpt[1]);
 	fscanf(fp, "%d %d", &endpt[0], &endpt[1]);
@@ -1124,10 +1136,8 @@ int main(){
 	int grid[ROW][COL];
 
 
-	// int startpt[2] = {1, 1};
-	// int endpt[2] = {399, 199};
+	int choice;
 
-	int startpt[2], endpt[2];
 
 	int gridPaths[ROW][COL];
 
@@ -1136,6 +1146,8 @@ int main(){
 	
 	int backtrack_x[(ROW-1)*(COL-1)];
 	int backtrack_y[(ROW-1)*(COL-1)];
+
+	char buffer;
 
 	
 	Queue Q;
@@ -1153,34 +1165,72 @@ int main(){
 	current = NULL;
 	
 	cleanGrid(grid);
-	readPolygonData(&start, &current, startpt, endpt);
-	traversePolyNodes(grid, start);	
-	
+	printf("1 - Maze | else - Input File: ");
+	scanf("%d", &choice);
+	scanf("%c", &buffer);
 
-	// init_maze(grid);
-	// maze_generator(indeks, grid, backtrack_x, backtrack_y, 1, 1, 1);
-	// printGrid(grid);
-	// printf("\n");
-	
-	copyGrid(grid, gridBackup);
-	BFS(grid, gridPaths, startpt, endpt);
-	printGrid(gridPaths);
-	
-	printf("\n");
+	if(choice == 1){
+		int startpt[2] = {1, 1};
+		int endpt[2] = {399, 199};
+		init_maze(grid);
+		maze_generator(indeks, grid, backtrack_x, backtrack_y, 1, 1, 1);
+		printGrid(grid);
+		printf("\n");
 
-	cleanGrid(gridPaths);
-	copyGrid(gridBackup, grid);
-	AStar(grid, gridPaths, startpt, endpt);
-	printGrid(gridPaths);
-	
-	printf("\n");
-	
-	cleanGrid(gridPaths);
-	copyGrid(gridBackup, grid);
-	DFS(grid, gridPaths, startpt, endpt);
-	printGrid(gridPaths);
+		copyGrid(grid, gridBackup);
+		BFS(grid, gridPaths, startpt, endpt);
+		printGrid(gridPaths);
+		
+		printf("\n");
 
-	printf("\n");
+		cleanGrid(gridPaths);
+		copyGrid(gridBackup, grid);
+		AStar(grid, gridPaths, startpt, endpt);
+		printGrid(gridPaths);
+		
+		printf("\n");
+		
+		cleanGrid(gridPaths);
+		copyGrid(gridBackup, grid);
+		DFS(grid, gridPaths, startpt, endpt);
+		printGrid(gridPaths);
+
+		printf("\n");
+	}
+
+	else{
+		int startpt[2], endpt[2];
+		
+		readPolygonData(&start, &current, startpt, endpt);
+		traversePolyNodes(grid, start);	
+		
+		printf("\n");
+
+		copyGrid(grid, gridBackup);
+		printf("Start: (%d, %d)\nEnd: (%d, %d)\n", startpt[0], startpt[1], endpt[0], endpt[1]);
+		BFS(grid, gridPaths, startpt, endpt);
+		printGrid(gridPaths);
+		
+		printf("\n");
+
+		cleanGrid(gridPaths);
+		copyGrid(gridBackup, grid);
+		printf("Start: (%d, %d)\nEnd: (%d, %d)\n", startpt[0], startpt[1], endpt[0], endpt[1]);
+		AStar(grid, gridPaths, startpt, endpt);
+		printGrid(gridPaths);
+		
+		printf("\n");
+		
+		cleanGrid(gridPaths);
+		copyGrid(gridBackup, grid);
+		printf("Start: (%d, %d)\nEnd: (%d, %d)\n", startpt[0], startpt[1], endpt[0], endpt[1]);
+		DFS(grid, gridPaths, startpt, endpt);
+		printGrid(gridPaths);
+
+		printf("\n");	
+	}
+
+	
 
 	return 0;
 }
