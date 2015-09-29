@@ -1200,10 +1200,14 @@ int main(){
 
 	else{
 		int startpt[2], endpt[2];
+		
 		readPolygonData(&start, &current, startpt, endpt);
 		traversePolyNodes(grid, start);	
+		
 		printf("\n");
+
 		copyGrid(grid, gridBackup);
+		printf("Start: (%d, %d)\nEnd: (%d, %d)\n", startpt[0], startpt[1], endpt[0], endpt[1]);
 		BFS(grid, gridPaths, startpt, endpt);
 		printGrid(gridPaths);
 		
@@ -1211,6 +1215,7 @@ int main(){
 
 		cleanGrid(gridPaths);
 		copyGrid(gridBackup, grid);
+		printf("Start: (%d, %d)\nEnd: (%d, %d)\n", startpt[0], startpt[1], endpt[0], endpt[1]);
 		AStar(grid, gridPaths, startpt, endpt);
 		printGrid(gridPaths);
 		
@@ -1218,6 +1223,7 @@ int main(){
 		
 		cleanGrid(gridPaths);
 		copyGrid(gridBackup, grid);
+		printf("Start: (%d, %d)\nEnd: (%d, %d)\n", startpt[0], startpt[1], endpt[0], endpt[1]);
 		DFS(grid, gridPaths, startpt, endpt);
 		printGrid(gridPaths);
 
